@@ -680,7 +680,7 @@ body.dark .msg.selected .bubble,body.dark .groupMsg.selected .bubble{background:
         <div class="authProgress"><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span></div>
         <div class="authField"><label for="suGameName">Game name</label><input class="authInput" id="suGameName" placeholder="Game name"></div>
         <div class="authField"><label for="suGameId">Game ID</label><input class="authInput" id="suGameId" placeholder="Game ID"></div>
-        <div class="authHint">The Game ID must contain the required underscore format.</div>
+        <div class="authHint">Game ID can be any format provided by your game.</div>
         <div class="authField"><label for="suPhone">Original mobile number</label><input class="authInput" id="suPhone" inputmode="numeric" autocomplete="tel" placeholder="Mobile number"></div>
         <button class="authBtn" onclick="signupNext(3)">Next</button>
       </div>
@@ -880,10 +880,6 @@ body.dark .msg.selected .bubble,body.dark .groupMsg.selected .bubble{background:
         <div class="profileFieldText"><b>Username</b><small id="profileUsernameValue" class="green">Reserve username</small></div>
         <svg class="chev"><use href="#i-arrow"/></svg>
       </div>
-      <div class="profileField">
-        <div class="profileFieldIcon"><svg><use href="#i-phone"/></svg></div>
-        <div class="profileFieldText"><b>Phone</b><small>+91 70124 36151</small></div>
-      </div>
       <div class="profileField" onclick="openLinksPage()">
         <div class="profileFieldIcon"><svg><use href="#i-link"/></svg></div>
         <div class="profileFieldText"><b>Links</b><small id="profileLinksValue" class="green">Add links</small></div>
@@ -1047,7 +1043,7 @@ body.dark .msg.selected .bubble,body.dark .groupMsg.selected .bubble{background:
     <button class="back" onclick="closeContactsDirectory()"><svg class="icon"><use href="#i-back"/></svg></button>
     <h3>Contacts on WhatsApp</h3>
   </div>
-  <div style="padding:10px 14px"><input id="directorySearch" class="contactField" style="margin:0;width:100%;height:45px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);padding:0 12px" placeholder="Search name, username or number" oninput="renderContactsDirectory()"></div>
+  <div style="padding:10px 14px"><input id="directorySearch" class="contactField" style="margin:0;width:100%;height:45px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);padding:0 12px" placeholder="Search name or username" oninput="renderContactsDirectory()"></div>
   <div class="contactInfoBody" id="contactsDirectoryBody"></div>
 </section>
 
@@ -1477,8 +1473,7 @@ function openContactEdit(){
   <div class="contactField"><label>First name</label><input id="editFirstName" value="${escapeHtml(c.firstName||"")}"></div>
   <div class="contactField"><label>Last name</label><input id="editLastName" value="${escapeHtml(c.lastName||"")}"></div>
   <div class="contactField"><label>Business name (optional)</label><input id="editBusinessName" value="${escapeHtml(c.businessName||"")}"></div>
-  <div class="contactField"><label>Username (optional)</label><input id="editUsername" value="${escapeHtml(c.username||"")}"></div>
-  <div class="contactField"><label>Country</label><div class="phonePrefix"><div class="prefix">KP +91</div><input id="editPhone" inputmode="numeric" maxlength="4" value="${escapeHtml(String(c.phone||"").replace(/\D/g,"").slice(0,4))}" placeholder="4-digit number" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,4)"></div></div>`;
+  <div class="contactField"><label>Username (optional)</label><input id="editUsername" value="${escapeHtml(c.username||"")}"></div>`;
   document.getElementById("contactInfoPage").classList.remove("show");
   document.getElementById("contactEditPage").classList.add("show");
 }
@@ -1505,7 +1500,7 @@ function openContactCreate(){
 }
 function saveContactCreate(){
   const f=document.getElementById("editFirstName").value.trim(),l=document.getElementById("editLastName").value.trim(),u=document.getElementById("editUsername").value.trim().replace(/^@/,""),p=document.getElementById("editPhone").value.replace(/\D/g,"").slice(0,4);
-  if(!f||p.length!==4){toast("First name and 4-digit phone number required");return}
+  if(!f){toast("First name is required");return}
   const c=normalizeContact({id:"ct_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),firstName:f,lastName:l,username:u,phone:p,name:[f,l].filter(Boolean).join(" "),color:"#d7f5ed"});
   contactStore.unshift(c);persistContacts();
   const chat={name:fullContactName(c),initial:fullContactName(c).slice(0,2).toUpperCase(),color:"#d7f5ed",preview:"New chat",time:"now",unread:0,contactId:c.id,phone:p,username:u};
@@ -2046,7 +2041,16 @@ function previewMediaUrl(){
     : `<img src="${escapeHtml(url)}" alt="Preview" onerror="this.parentElement.classList.remove('show')">`;
   box.classList.add("show");
 }
-function sendMediaUrl(){
+async function kpSendFirebaseMedia(type,url){
+  if(!currentChat?.id)return false;
+  const uid=kpUid(); if(!uid)return false;
+  try{
+    await addDoc(collection(db,"chats",currentChat.id,"messages"),{type,mediaUrl:url,senderId:uid,createdAt:serverTimestamp(),dateKey:dateKey(),read:false});
+    await updateDoc(doc(db,"chats",currentChat.id),{lastMessage:type==="video"?"Video":"Photo",lastMessageAt:serverTimestamp(),updatedAt:serverTimestamp()});
+    return true;
+  }catch(e){toast("Media failed: "+(e.code||"permission-denied"));return false;}
+}
+async function sendMediaUrl(){
   const url=document.getElementById("mediaUrlInput").value.trim();
   if(!url){toast("Paste a URL first");return}
   const m={type:mediaKind==="video"?"video":"photo",mediaUrl:url,out:true,senderId:currentGroup?"me":undefined,time:now(),dateKey:dateKey(),read:false};
@@ -2055,8 +2059,8 @@ function sendMediaUrl(){
     ensureGroupMessageArray(currentGroup).push(m);persistCurrentMessages();rerenderCurrentMessages();
   }else{
     if(!currentChat){toast("Open a chat first");return}
-    if(!messages[currentChat.name])messages[currentChat.name]=[];
-    messages[currentChat.name].push(m);persistCurrentMessages();rerenderCurrentMessages();
+    const ok=await kpSendFirebaseMedia(m.type,url);
+    if(!ok)return;
   }
   closeMediaComposer();
   toast(mediaKind==="video"?"Video sent":"Photo sent");
@@ -2450,7 +2454,7 @@ body.dark #menuModal{background:var(--panel);color:var(--text);border:1px solid 
 
   // GIF send: persist the date and turn the outgoing tick blue after a short delay.
   const baseSendGiphyItem=window.sendGiphyItem;
-  window.sendGiphyItem=function(item,sendUrl){
+  window.sendGiphyItem=async function(item,sendUrl){
     if(!sendUrl)return;
     const type='gif';
     const m={type,gifUrl:sendUrl,previewUrl:item.images?.fixed_width?.webp||item.images?.fixed_width?.url||item.images?.fixed_width_small?.webp||sendUrl,giphyId:item.id,title:item.title||'',out:true,senderId:currentGroup?'me':undefined,time:now(),dateKey:dateKey(),read:false};
@@ -2458,10 +2462,13 @@ body.dark #menuModal{background:var(--panel);color:var(--text);border:1px solid 
       if(currentGroup.permissions?.sendMessages==='admins'&&!groupIsAdmin(currentGroup)){toast('Only admins can send messages');return}
       ensureGroupMessageArray(currentGroup).push(m);persistCurrentMessages();renderGroupMessages();
     }else{
-      if(!currentChat)return;if(!messages[currentChat.name])messages[currentChat.name]=[];messages[currentChat.name].push(m);persistCurrentMessages();renderMessages();
+      if(!currentChat)return;
+      try{
+        await addDoc(collection(db,"chats",currentChat.id,"messages"),{type:"gif",gifUrl:m.gifUrl,previewUrl:m.previewUrl,giphyId:m.giphyId,title:m.title,senderId:kpUid(),createdAt:serverTimestamp(),dateKey:dateKey(),read:false});
+        await updateDoc(doc(db,"chats",currentChat.id),{lastMessage:"GIF",lastMessageAt:serverTimestamp(),updatedAt:serverTimestamp()});
+      }catch(e){toast("GIF failed: "+(e.code||"permission-denied"));return;}
     }
     closeGifPicker();toast('GIF sent');
-    setTimeout(()=>{m.read=true;persistCurrentMessages();currentGroup?renderGroupMessages():renderMessages()},650);
   };
   // Correct GIF rendering: transparent bubble, time + ticks, small GIF label.
   window.renderGiphyMessage=function(m){
@@ -2650,7 +2657,7 @@ window.signupNext = async function(step){
   if(step===3){
     const gn=$("suGameName").value.trim(), gi=$("suGameId").value.trim(), ph=$("suPhone").value.replace(/\D/g,"");
     if(!gn){authError("Enter your game name.");return;}
-    if(!gi || !gi.includes("_")){authError("Enter a valid Game ID.");return;}
+    if(!gi){authError("Please enter your Game ID.");return;}
     if(ph.length<7 || ph.length>15){authError("Enter a valid original mobile number.");return;}
     showSignupStep(4); return;
   }
@@ -2668,7 +2675,6 @@ window.signupNext = async function(step){
           tx.set(doc(db,"users",uid),{uid,username:u,displayName:name,photoURL:photo||"",dob:$("suDob").value,gameName:$("suGameName").value.trim(),gameId:$("suGameId").value.trim(),mobile:$("suPhone").value.replace(/\D/g,""),searchNumber:"",role:"user",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
         });
       }catch(err){ try{await deleteUser(auth.currentUser);}catch(_){} if(err.message==="USERNAME_TAKEN") throw new Error("That username was just taken. Please choose another."); throw err; }
-      await ensureSearchNumber(uid);
       await loadProfile(uid);
       $("welcomeTitle").textContent=`Welcome to KP WhatsApp, ${name}`;
       showSignupStep(5);
@@ -2698,25 +2704,14 @@ function friendlyAuthError(e){
   return e?.message || "Unable to continue. Please try again.";
 }
 
-async function ensureSearchNumber(uid){
-  const ref=doc(db,"users",uid); const snap=await getDoc(ref); const data=snap.data()||{}; if(data.searchNumber) return data.searchNumber;
-  for(let i=0;i<30;i++){
-    const n=String(Math.floor(1000+Math.random()*9000));
-    try{
-      await runTransaction(db, async(tx)=>{ const nr=doc(db,"searchNumbers",n); const ns=await tx.get(nr); if(ns.exists()) throw new Error("NUMBER_TAKEN"); tx.set(nr,{uid,number:n}); tx.update(ref,{searchNumber:n,updatedAt:new Date().toISOString()}); });
-      return n;
-    }catch(e){ if(e.message!=="NUMBER_TAKEN") throw e; }
-  }
-  throw new Error("Could not allocate a 4-digit search number.");
-}
 
 async function loadProfile(uid){
   const snap=await getDoc(doc(db,"users",uid)); currentUserProfile=snap.exists()?snap.data():{uid};
-  try{ const n=await ensureSearchNumber(uid); currentUserProfile.searchNumber=n; }catch(_){ }
   localStorage.setItem("kp-firebase-user",JSON.stringify(currentUserProfile));
   localStorage.setItem("kp-profile",JSON.stringify({name:currentUserProfile.displayName||"",about:"",username:currentUserProfile.username||"",links:"",photo:currentUserProfile.photoURL||""}));
 }
 function openAppForUser(profile){
+  applyTheme();
   document.body.classList.remove("authLoggedOut"); $("authRoot").style.display="none";
   try{ window.profileData = JSON.parse(localStorage.getItem("kp-profile")||"{}"); if(typeof syncProfileUI==='function')syncProfileUI(); }catch(_){ }
   if(typeof applyTheme==='function')applyTheme();
@@ -2752,8 +2747,6 @@ async function kpFindUser(term){
   const low=term.toLowerCase();
   let s=await getDoc(doc(db,"usernames",low));
   if(s.exists() && s.data().uid){ return await kpGetUser(s.data().uid); }
-  s=await getDoc(doc(db,"searchNumbers",term));
-  if(s.exists() && s.data().uid){ return await kpGetUser(s.data().uid); }
   const qs=await getDocs(query(collection(db,"users"),where("displayName","==",term)));
   if(!qs.empty) return {uid:qs.docs[0].id,...qs.docs[0].data()};
   return null;
@@ -2764,7 +2757,7 @@ async function kpCreateOrOpenUserChat(peer){
   const id=kpChatId(me,peer.uid);
   const ref=doc(db,"chats",id);
   const existing=await getDoc(ref);
-  const data={id,members:[me,peer.uid],type:"personal",updatedAt:serverTimestamp(),peer:{[me]:{name:currentUserProfile?.displayName||"You",username:currentUserProfile?.username||"",searchNumber:currentUserProfile?.searchNumber||"",photo:currentUserProfile?.photoURL||""},[peer.uid]:{name:peer.displayName||peer.username||"User",username:peer.username||"",searchNumber:peer.searchNumber||"",photo:peer.photoURL||""}}};
+  const data={id,members:[me,peer.uid],type:"personal",updatedAt:serverTimestamp(),peer:{[me]:{name:currentUserProfile?.displayName||"You",username:currentUserProfile?.username||"",photo:currentUserProfile?.photoURL||""},[peer.uid]:{name:peer.displayName||peer.username||"User",username:peer.username||"",photo:peer.photoURL||""}}};
   if(!existing.exists()) await setDoc(ref,{...data,lastMessage:"",lastMessageAt:serverTimestamp(),createdAt:serverTimestamp()});
   else await updateDoc(ref,{updatedAt:serverTimestamp()});
   const c=kpProfileToChat(peer); c.id=id;c.peerUid=peer.uid;c.chatId=id;
@@ -2790,24 +2783,39 @@ async function kpLoadChats(){
       const x=d.data(); const peerUid=(x.members||[]).find(id=>id!==uid); if(!peerUid)continue;
       let p=kpUserCache[peerUid]; try{p=p||await kpGetUser(peerUid);}catch(_){p=null;}
       const meta=x.peer?.[peerUid]||{};
-      next.push({id:d.id,chatId:d.id,peerUid,name:p?.displayName||meta.name||p?.username||"User",username:p?.username||meta.username||"",searchNumber:p?.searchNumber||meta.searchNumber||"",photo:p?.photoURL||meta.photo||"",initial:(p?.displayName||p?.username||meta.name||"U").slice(0,2).toUpperCase(),color:"#d7f5ed",preview:x.lastMessage||"",time:x.lastMessageAt?.toDate?x.lastMessageAt.toDate().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}):"",unread:0});
+      next.push({id:d.id,chatId:d.id,peerUid,name:p?.displayName||meta.name||p?.username||"User",username:p?.username||meta.username||"",photo:p?.photoURL||meta.photo||"",initial:(p?.displayName||p?.username||meta.name||"U").slice(0,2).toUpperCase(),color:"#d7f5ed",preview:x.lastMessage||"",time:x.lastMessageAt?.toDate?x.lastMessageAt.toDate().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}):"",unread:0});
     }
     next.sort((a,b)=>(b.time||"").localeCompare(a.time||"")); chats=next; renderChats();
     if(currentChat?.id){const fresh=next.find(x=>x.id===currentChat.id);if(fresh)currentChat={...currentChat,...fresh};}
   },e=>{toast("Chats could not sync: "+(e.code||"permission-denied"));});
 }
+/* KP V18 presence */
+(function(){
+ let myPresenceTimer=null,peerPresenceUnsub=null;
+ function uid(){return window.kpFirebase?.auth?.currentUser?.uid||null;}
+ async function setPresence(on){const u=uid();if(!u)return;try{await updateDoc(doc(db,'users',u),{online:!!on,lastActiveAt:serverTimestamp()});}catch(e){console.warn(e);}}
+ function visibility(){setPresence(document.visibilityState==='visible');}
+ function start(){if(myPresenceTimer)clearInterval(myPresenceTimer);setPresence(true);myPresenceTimer=setInterval(()=>setPresence(document.visibilityState==='visible'),30000);document.addEventListener('visibilitychange',visibility);}
+ function stop(){if(myPresenceTimer)clearInterval(myPresenceTimer);myPresenceTimer=null;setPresence(false);document.removeEventListener('visibilitychange',visibility);}
+ function ago(ts){let ms=ts?.toMillis?ts.toMillis():ts?.seconds?ts.seconds*1000:typeof ts==='number'?ts:typeof ts==='string'?Date.parse(ts):0;if(!ms)return 'last seen recently';let m=Math.max(0,Math.floor((Date.now()-ms)/60000));if(m<1)return 'last seen just now';if(m<60)return `last seen ${m} min ago`;let h=Math.floor(m/60);if(h<24)return `last seen ${h} hr${h===1?'':'s'} ago`;let d=Math.floor(h/24);return `last seen ${d} day${d===1?'':'s'} ago`;}
+ function apply(x){const e=document.getElementById('chatStatus');if(!e)return;if(x?.online){e.textContent='online';e.classList.add('kpOnlineStatus');}else{e.textContent=ago(x?.lastActiveAt||x?.lastSeen||x?.updatedAt);e.classList.remove('kpOnlineStatus');}}
+ window.kpWatchPeerPresence=function(id){if(peerPresenceUnsub)peerPresenceUnsub();peerPresenceUnsub=null;if(!id)return;peerPresenceUnsub=onSnapshot(doc(db,'users',id),s=>{if(s.exists())apply(s.data());});};
+ window.kpStopPeerPresence=function(){if(peerPresenceUnsub)peerPresenceUnsub();peerPresenceUnsub=null;};
+ if(typeof onAuthStateChanged==='function')onAuthStateChanged(auth,u=>u?start():stop());
+})();
+
 window.openChat=async function(idOrName){
   let c=chats.find(x=>x.id===idOrName||x.name===idOrName);
   if(!c && idOrName?.uid){c=kpProfileToChat(idOrName);}
   if(!c){toast("Chat not found");return;}
-  currentChat=c; document.getElementById("chatName").textContent=c.name; document.getElementById("chatStatus").textContent="online"; document.getElementById("chatAvatar").innerHTML=avatar(c);
+  currentChat=c; document.getElementById("chatName").textContent=c.name; document.getElementById("chatStatus").textContent="checking…"; document.getElementById("chatAvatar").innerHTML=avatar(c); if(window.kpWatchPeerPresence)window.kpWatchPeerPresence(c.peerUid||c.uid||c.userId);
   go("chat"); kpListenChat(c.id);
   const arr=messages[c.id]||[]; document.getElementById("messages").innerHTML=withDaySeparators(arr,messageHTML);document.getElementById("messages").scrollTop=document.getElementById("messages").scrollHeight;
 };
 window.createChat=async function(){
   const n=document.getElementById("newName").value.trim(); if(!n)return;
   const uid=kpUid(); if(!uid){toast("Please login first");return;}
-  try{ const p=await kpFindUser(n); if(!p){toast("User not found. Search with username or 4-digit number.");return;} await kpCreateOrOpenUserChat(p); }
+  try{ const p=await kpFindUser(n); if(!p){toast("User not found. Search with username or name.");return;} await kpCreateOrOpenUserChat(p); }
   catch(e){toast("Could not create chat: "+(e.code||e.message||"error"));}
 };
 window.sendMessage=async function(){
@@ -2827,13 +2835,68 @@ window.checkUsernameAvailability=function(){
   st.textContent="Checking…";st.className="authStatus";
   return new Promise(resolve=>{usernameTimer=setTimeout(async()=>{try{const snap=await getDoc(doc(db,"usernames",usernameKey(v)));usernameAvailable=!snap.exists();st.textContent=usernameAvailable?"✓ Username is available":"Username is already taken";st.className="authStatus "+(usernameAvailable?"ok":"bad");resolve(usernameAvailable);}catch(e){st.textContent="Firebase permission/database error";st.className="authStatus bad";resolve(false);}},300);});
 };
-/* Home search: if no local chat matches, search Firebase users by username/4-digit/name. */
-const kpSearchInput=$("searchInput"); if(kpSearchInput){kpSearchInput.addEventListener("input",async()=>{const q=kpSearchInput.value.trim();renderChats();if(!q)return;try{let p=await kpFindUser(q);if(p&&!chats.some(c=>c.peerUid===p.uid)){const el=$("chatList");el.insertAdjacentHTML("afterbegin",`<div class="chatRow" data-kp-user="${p.uid}">${avatar({photo:p.photoURL||"",initial:(p.displayName||p.username||"U").slice(0,2).toUpperCase(),color:"#d7f5ed"})}<div class="chatInfo"><div class="chatTop"><b>${escapeHtml(p.displayName||p.username)}</b><span class="time">${escapeHtml(p.searchNumber||"")}</span></div><div class="chatBottom"><div class="preview">@${escapeHtml(p.username||"")}</div></div></div></div>`);el.querySelector("[data-kp-user]")?.addEventListener("click",()=>kpCreateOrOpenUserChat(p));}}catch(_){}});}
+/* Home search: if no local chat matches, search Firebase users by username/name. */
+const kpSearchInput=$("searchInput"); if(kpSearchInput){kpSearchInput.addEventListener("input",async()=>{const q=kpSearchInput.value.trim();renderChats();if(!q)return;try{let p=await kpFindUser(q);if(p&&!chats.some(c=>c.peerUid===p.uid)){const el=$("chatList");el.insertAdjacentHTML("afterbegin",`<div class="chatRow" data-kp-user="${p.uid}">${avatar({photo:p.photoURL||"",initial:(p.displayName||p.username||"U").slice(0,2).toUpperCase(),color:"#d7f5ed"})}<div class="chatInfo"><div class="chatTop"><b>${escapeHtml(p.displayName||p.username)}</b></div><div class="chatBottom"><div class="preview">@${escapeHtml(p.username||"")}</div></div></div></div>`);el.querySelector("[data-kp-user]")?.addEventListener("click",()=>kpCreateOrOpenUserChat(p));}}catch(_){}});}
 
 onAuthStateChanged(auth, async user=>{ if(user){ try{await loadProfile(user.uid); kpLoadChats();}catch(e){console.error(e);} } else { if(kpChatsUnsub)kpChatsUnsub(); kpUnsubActive(); } });
 
 
 </script>
 
-</body>
+
+<style id="kp-v17-new-chat-page">
+.kpNewChatPage{position:fixed;inset:0;background:var(--bg,#fff);z-index:90;display:none;flex-direction:column}
+.kpNewChatPage.show{display:flex}
+.kpNCTop{height:64px;display:flex;align-items:center;gap:12px;padding:0 14px;border-bottom:1px solid var(--line);background:var(--surface,#fff)}
+.kpNCBack{width:42px;height:42px;display:grid;place-items:center;color:var(--text);font-size:30px;line-height:1}
+.kpNCTitle{font-size:20px;font-weight:750}.kpNCSub{font-size:12px;color:var(--text-soft,#667781);margin-top:2px}
+.kpNCOptions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 14px;background:var(--surface,#fff);border-bottom:1px solid var(--line)}
+.kpNCOption{min-height:50px;border:1px solid var(--line);border-radius:12px;background:var(--bg,#f5f5f5);color:var(--text);font-weight:650;text-align:left;padding:10px 12px;cursor:pointer}
+.kpNCOption.active{border-color:#25d366;background:rgba(37,211,102,.10)}
+.kpNCSearch{padding:10px 14px;background:var(--surface,#fff);border-bottom:1px solid var(--line)}
+.kpNCSearch input{width:100%;height:46px;border:1px solid var(--line);border-radius:12px;background:var(--bg,#f0f2f5);color:var(--text);padding:0 14px;font-size:15px;outline:none}
+.kpNCList{overflow:auto;flex:1;padding-bottom:24px}.kpNCRow{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer}.kpNCRow:active{background:var(--hover,#f5f5f5)}
+.kpNCAv{width:50px;height:50px;border-radius:50%;overflow:hidden;flex:0 0 50px;display:grid;place-items:center;background:#d7f5ed;font-weight:700;color:#164b3c}.kpNCAv img{width:100%;height:100%;object-fit:cover}.kpNCInfo{min-width:0;flex:1}.kpNCName{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kpNCUser{font-size:13px;color:var(--text-soft,#667781);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kpNCEmpty{padding:45px 20px;text-align:center;color:var(--text-soft,#667781)}
+@media(min-width:700px){.kpNewChatPage{left:50%;width:600px;transform:translateX(-50%);box-shadow:0 10px 50px rgba(0,0,0,.18)}}
+body.dark .kpNCOption{background:#202c33}body.dark .kpNCSearch input{background:#202c33}
+</style>
+<script>
+(function(){
+  function esc(v){return typeof escapeHtml==='function'?escapeHtml(String(v??'')):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function me(){return typeof kpUid==='function'?kpUid():window.kpFirebase?.auth?.currentUser?.uid||null;}
+  function makePage(){
+    if(document.getElementById('kpNewChatPage'))return;
+    const d=document.createElement('section');d.id='kpNewChatPage';d.className='kpNewChatPage';
+    d.innerHTML=`<div class="kpNCTop"><button class="kpNCBack" onclick="closeKPNewChatPage()" aria-label="Back">‹</button><div><div class="kpNCTitle">New Chat</div><div class="kpNCSub">KP WhatsApp contacts</div></div></div><div class="kpNCOptions"><button class="kpNCOption active" onclick="kpNCChoose('contacts',this)">New Contact</button><button class="kpNCOption" onclick="openGroupCreate();closeKPNewChatPage()">New Group</button><button class="kpNCOption" onclick="toast('New Community')">New Community</button><button class="kpNCOption" onclick="kpNCChoose('contacts',this)">Contacts on KP WhatsApp</button></div><div class="kpNCSearch"><input id="kpNCSearchInput" placeholder="Search name or username" autocomplete="off"></div><div id="kpNCList" class="kpNCList"><div class="kpNCEmpty">Loading contacts…</div></div>`;
+    document.body.appendChild(d);
+    d.querySelector('#kpNCSearchInput').addEventListener('input',renderUsers);d.querySelector('#kpNCSearchInput').addEventListener('keydown',async e=>{if(e.key==='Enter'){const q=e.target.value.trim();if(!q)return;try{const u=await kpFindUser(q);if(u)await kpOpenNewChatUser(u.uid);else toast('User not found');}catch(err){toast('Search failed: '+(err.code||'error'));}}});
+  }
+  window.openKPNewChatPage=async function(){
+    if(!me()){toast('Please login first');return;}
+    makePage();const d=document.getElementById('kpNewChatPage');d.classList.add('show');
+    document.getElementById('kpNCSearchInput').value='';document.getElementById('kpNCList').innerHTML='<div class="kpNCEmpty">Loading all KP WhatsApp users…</div>';
+    try{
+      const snap=await getDocs(collection(db,'users'));
+      window.kpAllUsers=(snap.docs||[]).map(x=>x.data()).filter(x=>x.uid&&x.uid!==me());
+      window.kpAllUsers.sort((a,b)=>(a.displayName||a.username||'').localeCompare(b.displayName||b.username||''));
+      renderUsers();
+    }catch(e){document.getElementById('kpNCList').innerHTML='<div class="kpNCEmpty">Could not load contacts.<br><small>'+esc(e.code||e.message||'permission-denied')+'</small></div>';}
+  };
+  window.closeKPNewChatPage=function(){document.getElementById('kpNewChatPage')?.classList.remove('show');};
+  window.kpNCChoose=function(type,btn){document.querySelectorAll('.kpNCOption').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.getElementById('kpNCSearchInput')?.focus();};
+  function renderUsers(){
+    const list=document.getElementById('kpNCList');if(!list)return;const q=(document.getElementById('kpNCSearchInput')?.value||'').trim().toLowerCase();
+    const arr=(window.kpAllUsers||[]).filter(u=>{const n=(u.displayName||'').toLowerCase(),user=(u.username||'').toLowerCase();return !q||n.includes(q)||user.includes(q);});
+    list.innerHTML=arr.map(u=>{const name=u.displayName||u.username||'User',initial=name.slice(0,2).toUpperCase();const av=u.photoURL?`<img src="${esc(u.photoURL)}" alt="">`:`<span>${esc(initial)}</span>`;return `<div class="kpNCRow" onclick="kpOpenNewChatUser('${esc(u.uid)}')"><div class="kpNCAv">${av}</div><div class="kpNCInfo"><div class="kpNCName">${esc(name)}</div><div class="kpNCUser">@${esc(u.username||'user')}</div></div></div>`;}).join('')||'<div class="kpNCEmpty">No KP WhatsApp users found</div>';
+  }
+  window.kpOpenNewChatUser=async function(uid){const u=(window.kpAllUsers||[]).find(x=>x.uid===uid);if(!u)return;try{await kpCreateOrOpenUserChat(u);closeKPNewChatPage();}catch(e){toast('Could not open chat: '+(e.code||e.message||'error'));}};
+  window.openContactsDirectory=window.openKPNewChatPage;
+  function hook(){
+    const fab=document.querySelector('#home .fab');if(fab)fab.onclick=()=>openKPNewChatPage();
+    document.querySelectorAll('#menuModal button').forEach(b=>{const t=(b.textContent||'').toLowerCase();if(t.includes('new contact')||t.includes('contacts on whatsapp'))b.onclick=()=>{closeModal();openKPNewChatPage();};});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',hook);else hook();setTimeout(hook,500);
+})();
+</script>
+<style>.kpOnlineStatus{color:#25d366!important;font-weight:600}</style></body>
 </html>
