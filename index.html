@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#008069">
-<title>KP WhatsApp</title>
+<title>KP WhatsApp V19</title>
 <style>
 :root{
  --green:#008069;--green2:#00a884;--blue:#53bdeb;--bg:#f0f2f5;--panel:#fff;
@@ -2701,15 +2701,71 @@ function friendlyAuthError(e){
   if(c.includes("weak-password")) return "Password is too weak.";
   if(c.includes("network-request-failed")) return "Network connection failed. Please try again.";
   if(c.includes("operation-not-allowed")) return "Email/password sign-in is not enabled in Firebase Authentication yet.";
+  if(e?.message==="PROFILE_MISSING_USERNAME") return "Could not recover your username. Please sign in again.";
   return e?.message || "Unable to continue. Please try again.";
 }
 
 
 async function loadProfile(uid){
-  const snap=await getDoc(doc(db,"users",uid)); currentUserProfile=snap.exists()?snap.data():{uid};
+  const ref=doc(db,"users",uid);
+  const snap=await getDoc(ref);
+
+  if(snap.exists()){
+    currentUserProfile={uid,...snap.data()};
+  }else{
+    /* Legacy-account repair: Firebase Auth accounts can exist without a
+       Firestore users/{uid} document. The Auth email is synthetic
+       username@kpwhatsapp.app, so the username can safely be recovered
+       from it. Display name falls back to username until the user edits it. */
+    const au=auth.currentUser;
+    const rawEmail=String(au?.email||"").toLowerCase();
+    const username=rawEmail.endsWith("@kpwhatsapp.app")
+      ? rawEmail.slice(0,-"@kpwhatsapp.app".length)
+      : (localStorage.getItem("kp-last-username")||"");
+    if(!username) throw new Error("PROFILE_MISSING_USERNAME");
+
+    const repaired={
+      uid,
+      username,
+      displayName:username,
+      photoURL:"",
+      dob:"",
+      gameName:"",
+      gameId:"",
+      mobile:"",
+      role:"user",
+      online:false,
+      createdAt:new Date().toISOString(),
+      updatedAt:new Date().toISOString()
+    };
+    await setDoc(ref,repaired,{merge:true});
+    /* Also restore the username registry when it is missing. */
+    const ur=doc(db,"usernames",username);
+    const us=await getDoc(ur);
+    if(!us.exists()) await setDoc(ur,{uid,username,createdAt:new Date().toISOString()});
+    currentUserProfile=repaired;
+  }
+
   localStorage.setItem("kp-firebase-user",JSON.stringify(currentUserProfile));
-  localStorage.setItem("kp-profile",JSON.stringify({name:currentUserProfile.displayName||"",about:"",username:currentUserProfile.username||"",links:"",photo:currentUserProfile.photoURL||""}));
+  localStorage.setItem("kp-last-username",currentUserProfile.username||"");
+  localStorage.setItem("kp-profile",JSON.stringify({
+    name:currentUserProfile.displayName||currentUserProfile.username||"",
+    about:"",
+    username:currentUserProfile.username||"",
+    links:"",
+    photo:currentUserProfile.photoURL||""
+  }));
 }
+window.kpRepairMyProfile=async function(){
+  const u=auth.currentUser;
+  if(!u){toast("Please login first");return;}
+  try{
+    await loadProfile(u.uid);
+    toast("Profile synced to KP WhatsApp");
+    if(typeof openKPNewChatPage==='function') openKPNewChatPage();
+  }catch(e){console.error(e);toast("Profile sync failed: "+(e.code||e.message||"error"));}
+};
+
 function openAppForUser(profile){
   applyTheme();
   document.body.classList.remove("authLoggedOut"); $("authRoot").style.display="none";
@@ -2747,23 +2803,72 @@ async function kpFindUser(term){
   const low=term.toLowerCase();
   const local=(window.kpAllUsers||[]).find(u=>(u.username||"").toLowerCase()===low || (u.displayName||"").toLowerCase()===low);
   if(local) return local;
-  let s=await getDoc(doc(db,"usernames",low));
-  if(s.exists() && s.data().uid){ return await kpGetUser(s.data().uid); }
-  const qs=await getDocs(query(collection(db,"users"),where("displayName","==",term)));
-  if(!qs.empty) return {uid:qs.docs[0].id,...qs.docs[0].data()};
-  return null;
+  try{
+    let s=await getDoc(doc(db,"usernames",low));
+    if(s.exists() && s.data().uid){
+      const p=await kpGetUser(s.data().uid);
+      if(p)return p;
+    }
+  }catch(e){console.warn("username lookup failed",e);}
+
+  /* Do not depend on an exact-case displayName query. */
+  const all=await getDocs(collection(db,"users"));
+  const users=all.docs.map(d=>({uid:d.id,...d.data()})).filter(u=>u.uid!==kpUid());
+  return users.find(u=>
+    (u.username||"").toLowerCase()===low ||
+    (u.displayName||"").toLowerCase()===low
+  ) || users.find(u=>
+    (u.username||"").toLowerCase().includes(low) ||
+    (u.displayName||"").toLowerCase().includes(low)
+  ) || null;
 }
 async function kpCreateOrOpenUserChat(peer){
-  const me=kpUid(); if(!me||!peer?.uid) return;
+  const me=kpUid();
+  if(!me){toast("Firebase login session not ready");return;}
+  if(!peer?.uid){toast("This user has no Firebase UID");return;}
   if(peer.uid===me){toast("You cannot start a chat with yourself");return;}
+
   const id=kpChatId(me,peer.uid);
   const ref=doc(db,"chats",id);
-  const existing=await getDoc(ref);
-  const data={id,members:[me,peer.uid],type:"personal",updatedAt:serverTimestamp(),peer:{[me]:{name:currentUserProfile?.displayName||"You",username:currentUserProfile?.username||"",photo:currentUserProfile?.photoURL||""},[peer.uid]:{name:peer.displayName||peer.username||"User",username:peer.username||"",photo:peer.photoURL||""}}};
-  if(!existing.exists()) await setDoc(ref,{...data,lastMessage:"",lastMessageAt:serverTimestamp(),createdAt:serverTimestamp()});
-  else await updateDoc(ref,{updatedAt:serverTimestamp()});
-  const c=kpProfileToChat(peer); c.id=id;c.peerUid=peer.uid;c.chatId=id;
-  currentChat=c; closeModal(); renderChats(); openChat(id);
+  const data={
+    id,
+    members:[me,peer.uid],
+    type:"personal",
+    updatedAt:serverTimestamp(),
+    lastMessage:"",
+    lastMessageAt:serverTimestamp(),
+    peer:{
+      [me]:{
+        name:currentUserProfile?.displayName||"You",
+        username:currentUserProfile?.username||"",
+        photo:currentUserProfile?.photoURL||""
+      },
+      [peer.uid]:{
+        name:peer.displayName||peer.username||"User",
+        username:peer.username||"",
+        photo:peer.photoURL||""
+      }
+    }
+  };
+
+  try{
+    /* merge keeps an already-existing chat intact and avoids a fragile
+       getDoc -> updateDoc race. */
+    await setDoc(ref,{...data,createdAt:serverTimestamp()},{merge:true});
+
+    const c=kpProfileToChat(peer);
+    c.id=id;c.peerUid=peer.uid;c.chatId=id;
+    currentChat=c;
+    closeModal();
+    if(typeof closeKPNewChatPage==="function") closeKPNewChatPage();
+
+    /* Open directly from the Firebase chat id. Do not wait for the
+       chats collection listener to return the newly-created document. */
+    await window.openChat(id);
+  }catch(e){
+    console.error("KP chat create/open failed",e);
+    toast("Chat failed: "+(e.code||e.message||"unknown error"));
+  }
 }
 function kpUnsubActive(){ if(kpChatUnsub){kpChatUnsub();kpChatUnsub=null;} }
 function kpListenChat(chatId){
@@ -2775,7 +2880,7 @@ function kpListenChat(chatId){
     if(currentChat?.id===chatId){
       const el=document.getElementById("messages"); if(el){el.innerHTML=withDaySeparators(arr,messageHTML);el.scrollTop=el.scrollHeight;}
     }
-  },e=>toast("Chat sync error: "+(e.code||"permission-denied")));
+  },e=>{console.error("Chat sync error",e);toast("Chat sync error: "+(e.code||e.message||"permission-denied"));});
 }
 async function kpLoadChats(){
   if(kpChatsUnsub) kpChatsUnsub(); const uid=kpUid(); if(!uid)return;
@@ -2789,7 +2894,7 @@ async function kpLoadChats(){
     }
     next.sort((a,b)=>(b.time||"").localeCompare(a.time||"")); chats=next; renderChats();
     if(currentChat?.id){const fresh=next.find(x=>x.id===currentChat.id);if(fresh)currentChat={...currentChat,...fresh};}
-  },e=>{toast("Chats could not sync: "+(e.code||"permission-denied"));});
+  },e=>{console.error("Chats could not sync",e);toast("Chats could not sync: "+(e.code||e.message||"permission-denied"));});
 }
 /* KP V18 presence */
 (function(){
@@ -2827,8 +2932,12 @@ window.sendMessage=async function(){
   const uid=kpUid(); if(!uid)return;
   input.value="";autoGrow(input);updateSend();
   try{
-    await addDoc(collection(db,"chats",currentChat.id,"messages"),{text,senderId:uid,type:"text",createdAt:serverTimestamp(),dateKey:dateKey(),read:false});
-    await updateDoc(doc(db,"chats",currentChat.id),{lastMessage:text,lastMessageAt:serverTimestamp(),updatedAt:serverTimestamp()});
+    await addDoc(collection(db,"chats",currentChat.id,"messages"),{
+      text,senderId:uid,type:"text",createdAt:serverTimestamp(),dateKey:dateKey(),read:false
+    });
+    await setDoc(doc(db,"chats",currentChat.id),{
+      lastMessage:text,lastMessageAt:serverTimestamp(),updatedAt:serverTimestamp()
+    },{merge:true});
   }catch(e){input.value=text;updateSend();toast("Message failed: "+(e.code||"permission-denied"));}
 };
 /* Username availability now returns a real promise, so signup cannot race Firestore. */
