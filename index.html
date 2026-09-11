@@ -2572,7 +2572,7 @@ body.dark #menuModal{background:var(--panel);color:var(--text);border:1px solid 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, runTransaction, collection, query, where, onSnapshot, addDoc, updateDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAsjCOOYokl8rYb75ixZuSDOTAwJapWHLE",
@@ -2735,6 +2735,104 @@ onAuthStateChanged(auth, async(user)=>{
 
 // Keep authentication preference synced with the existing dark-mode toggle.
 window.addEventListener('storage',setAuthTheme);
+
+/* ================= KP FIREBASE CONNECTED V15 ================= */
+let kpChatUnsub=null, kpChatsUnsub=null, kpUserCache={};
+function kpUid(){ return auth.currentUser?.uid || currentUserProfile?.uid || null; }
+function kpChatId(a,b){ return [a,b].sort().join("__"); }
+function kpProfileToChat(p){ return {id:p.uid,name:p.displayName||p.username||"User",username:p.username||"",searchNumber:p.searchNumber||"",photo:p.photoURL||"",initial:(p.displayName||p.username||"U").slice(0,2).toUpperCase(),color:"#d7f5ed",preview:"",time:"",unread:0,peerUid:p.uid}; }
+async function kpGetUser(uid){
+  if(kpUserCache[uid]) return kpUserCache[uid];
+  const s=await getDoc(doc(db,"users",uid));
+  if(!s.exists()) return null;
+  const p={uid,...s.data()}; kpUserCache[uid]=p; return p;
+}
+async function kpFindUser(term){
+  term=String(term||"").trim(); if(!term) return null;
+  const low=term.toLowerCase();
+  let s=await getDoc(doc(db,"usernames",low));
+  if(s.exists() && s.data().uid){ return await kpGetUser(s.data().uid); }
+  s=await getDoc(doc(db,"searchNumbers",term));
+  if(s.exists() && s.data().uid){ return await kpGetUser(s.data().uid); }
+  const qs=await getDocs(query(collection(db,"users"),where("displayName","==",term)));
+  if(!qs.empty) return {uid:qs.docs[0].id,...qs.docs[0].data()};
+  return null;
+}
+async function kpCreateOrOpenUserChat(peer){
+  const me=kpUid(); if(!me||!peer?.uid) return;
+  if(peer.uid===me){toast("You cannot start a chat with yourself");return;}
+  const id=kpChatId(me,peer.uid);
+  const ref=doc(db,"chats",id);
+  const existing=await getDoc(ref);
+  const data={id,members:[me,peer.uid],type:"personal",updatedAt:serverTimestamp(),peer:{[me]:{name:currentUserProfile?.displayName||"You",username:currentUserProfile?.username||"",searchNumber:currentUserProfile?.searchNumber||"",photo:currentUserProfile?.photoURL||""},[peer.uid]:{name:peer.displayName||peer.username||"User",username:peer.username||"",searchNumber:peer.searchNumber||"",photo:peer.photoURL||""}}};
+  if(!existing.exists()) await setDoc(ref,{...data,lastMessage:"",lastMessageAt:serverTimestamp(),createdAt:serverTimestamp()});
+  else await updateDoc(ref,{updatedAt:serverTimestamp()});
+  const c=kpProfileToChat(peer); c.id=id;c.peerUid=peer.uid;c.chatId=id;
+  currentChat=c; closeModal(); renderChats(); openChat(id);
+}
+function kpUnsubActive(){ if(kpChatUnsub){kpChatUnsub();kpChatUnsub=null;} }
+function kpListenChat(chatId){
+  kpUnsubActive(); if(!chatId)return;
+  kpChatUnsub=onSnapshot(query(collection(db,"chats",chatId,"messages")),snap=>{
+    const arr=snap.docs.map(d=>({id:d.id,...d.data(),time:d.data().createdAt?.toDate?d.data().createdAt.toDate().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}):(d.data().time||""),out:d.data().senderId===kpUid()}));
+    arr.sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+    messages[chatId]=arr;
+    if(currentChat?.id===chatId){
+      const el=document.getElementById("messages"); if(el){el.innerHTML=withDaySeparators(arr,messageHTML);el.scrollTop=el.scrollHeight;}
+    }
+  },e=>toast("Chat sync error: "+(e.code||"permission-denied")));
+}
+async function kpLoadChats(){
+  if(kpChatsUnsub) kpChatsUnsub(); const uid=kpUid(); if(!uid)return;
+  kpChatsUnsub=onSnapshot(query(collection(db,"chats"),where("members","array-contains",uid)),async snap=>{
+    const next=[];
+    for(const d of snap.docs){
+      const x=d.data(); const peerUid=(x.members||[]).find(id=>id!==uid); if(!peerUid)continue;
+      let p=kpUserCache[peerUid]; try{p=p||await kpGetUser(peerUid);}catch(_){p=null;}
+      const meta=x.peer?.[peerUid]||{};
+      next.push({id:d.id,chatId:d.id,peerUid,name:p?.displayName||meta.name||p?.username||"User",username:p?.username||meta.username||"",searchNumber:p?.searchNumber||meta.searchNumber||"",photo:p?.photoURL||meta.photo||"",initial:(p?.displayName||p?.username||meta.name||"U").slice(0,2).toUpperCase(),color:"#d7f5ed",preview:x.lastMessage||"",time:x.lastMessageAt?.toDate?x.lastMessageAt.toDate().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}):"",unread:0});
+    }
+    next.sort((a,b)=>(b.time||"").localeCompare(a.time||"")); chats=next; renderChats();
+    if(currentChat?.id){const fresh=next.find(x=>x.id===currentChat.id);if(fresh)currentChat={...currentChat,...fresh};}
+  },e=>{toast("Chats could not sync: "+(e.code||"permission-denied"));});
+}
+window.openChat=async function(idOrName){
+  let c=chats.find(x=>x.id===idOrName||x.name===idOrName);
+  if(!c && idOrName?.uid){c=kpProfileToChat(idOrName);}
+  if(!c){toast("Chat not found");return;}
+  currentChat=c; document.getElementById("chatName").textContent=c.name; document.getElementById("chatStatus").textContent="online"; document.getElementById("chatAvatar").innerHTML=avatar(c);
+  go("chat"); kpListenChat(c.id);
+  const arr=messages[c.id]||[]; document.getElementById("messages").innerHTML=withDaySeparators(arr,messageHTML);document.getElementById("messages").scrollTop=document.getElementById("messages").scrollHeight;
+};
+window.createChat=async function(){
+  const n=document.getElementById("newName").value.trim(); if(!n)return;
+  const uid=kpUid(); if(!uid){toast("Please login first");return;}
+  try{ const p=await kpFindUser(n); if(!p){toast("User not found. Search with username or 4-digit number.");return;} await kpCreateOrOpenUserChat(p); }
+  catch(e){toast("Could not create chat: "+(e.code||e.message||"error"));}
+};
+window.sendMessage=async function(){
+  const input=document.getElementById("messageInput"), text=input.value.trim(); if(!text||!currentChat?.id)return;
+  const uid=kpUid(); if(!uid)return;
+  input.value="";autoGrow(input);updateSend();
+  try{
+    await addDoc(collection(db,"chats",currentChat.id,"messages"),{text,senderId:uid,type:"text",createdAt:serverTimestamp(),dateKey:dateKey(),read:false});
+    await updateDoc(doc(db,"chats",currentChat.id),{lastMessage:text,lastMessageAt:serverTimestamp(),updatedAt:serverTimestamp()});
+  }catch(e){input.value=text;updateSend();toast("Message failed: "+(e.code||"permission-denied"));}
+};
+/* Username availability now returns a real promise, so signup cannot race Firestore. */
+window.checkUsernameAvailability=function(){
+  const v=$("suUsername").value.trim(), st=$("usernameStatus"); usernameAvailable=false; clearTimeout(usernameTimer);
+  if(!v){st.textContent="";st.className="authStatus";return Promise.resolve(false);}
+  if(!validUsername(v)){st.textContent="Use 3–30 letters, numbers, dot or underscore.";st.className="authStatus bad";return Promise.resolve(false);}
+  st.textContent="Checking…";st.className="authStatus";
+  return new Promise(resolve=>{usernameTimer=setTimeout(async()=>{try{const snap=await getDoc(doc(db,"usernames",usernameKey(v)));usernameAvailable=!snap.exists();st.textContent=usernameAvailable?"✓ Username is available":"Username is already taken";st.className="authStatus "+(usernameAvailable?"ok":"bad");resolve(usernameAvailable);}catch(e){st.textContent="Firebase permission/database error";st.className="authStatus bad";resolve(false);}},300);});
+};
+/* Home search: if no local chat matches, search Firebase users by username/4-digit/name. */
+const kpSearchInput=$("searchInput"); if(kpSearchInput){kpSearchInput.addEventListener("input",async()=>{const q=kpSearchInput.value.trim();renderChats();if(!q)return;try{let p=await kpFindUser(q);if(p&&!chats.some(c=>c.peerUid===p.uid)){const el=$("chatList");el.insertAdjacentHTML("afterbegin",`<div class="chatRow" data-kp-user="${p.uid}">${avatar({photo:p.photoURL||"",initial:(p.displayName||p.username||"U").slice(0,2).toUpperCase(),color:"#d7f5ed"})}<div class="chatInfo"><div class="chatTop"><b>${escapeHtml(p.displayName||p.username)}</b><span class="time">${escapeHtml(p.searchNumber||"")}</span></div><div class="chatBottom"><div class="preview">@${escapeHtml(p.username||"")}</div></div></div></div>`);el.querySelector("[data-kp-user]")?.addEventListener("click",()=>kpCreateOrOpenUserChat(p));}}catch(_){}});}
+
+onAuthStateChanged(auth, async user=>{ if(user){ try{await loadProfile(user.uid); kpLoadChats();}catch(e){console.error(e);} } else { if(kpChatsUnsub)kpChatsUnsub(); kpUnsubActive(); } });
+
+
 </script>
 
 </body>
