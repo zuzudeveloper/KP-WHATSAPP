@@ -2745,6 +2745,8 @@ async function kpGetUser(uid){
 async function kpFindUser(term){
   term=String(term||"").trim(); if(!term) return null;
   const low=term.toLowerCase();
+  const local=(window.kpAllUsers||[]).find(u=>(u.username||"").toLowerCase()===low || (u.displayName||"").toLowerCase()===low);
+  if(local) return local;
   let s=await getDoc(doc(db,"usernames",low));
   if(s.exists() && s.data().uid){ return await kpGetUser(s.data().uid); }
   const qs=await getDocs(query(collection(db,"users"),where("displayName","==",term)));
@@ -2877,7 +2879,7 @@ body.dark .kpNCOption{background:#202c33}body.dark .kpNCSearch input{background:
     document.getElementById('kpNCSearchInput').value='';document.getElementById('kpNCList').innerHTML='<div class="kpNCEmpty">Loading all KP WhatsApp users…</div>';
     try{
       const snap=await getDocs(collection(db,'users'));
-      window.kpAllUsers=(snap.docs||[]).map(x=>x.data()).filter(x=>x.uid&&x.uid!==me());
+      window.kpAllUsers=(snap.docs||[]).map(x=>({uid:x.id,...x.data()})).filter(x=>x.uid&&x.uid!==me());
       window.kpAllUsers.sort((a,b)=>(a.displayName||a.username||'').localeCompare(b.displayName||b.username||''));
       renderUsers();
     }catch(e){document.getElementById('kpNCList').innerHTML='<div class="kpNCEmpty">Could not load contacts.<br><small>'+esc(e.code||e.message||'permission-denied')+'</small></div>';}
