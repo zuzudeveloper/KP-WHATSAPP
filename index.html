@@ -2808,6 +2808,8 @@ async function kpLoadChats(){
 
 window.openChat=async function(idOrName){
   let c=chats.find(x=>x.id===idOrName||x.name===idOrName);
+  /* Fix: a newly-created Firebase chat may not be in the onSnapshot list yet. */
+  if(!c && currentChat && (currentChat.id===idOrName || currentChat.chatId===idOrName)){c=currentChat;}
   if(!c && idOrName?.uid){c=kpProfileToChat(idOrName);}
   if(!c){toast("Chat not found");return;}
   currentChat=c; document.getElementById("chatName").textContent=c.name; document.getElementById("chatStatus").textContent="checking…"; document.getElementById("chatAvatar").innerHTML=avatar(c); if(window.kpWatchPeerPresence)window.kpWatchPeerPresence(c.peerUid||c.uid||c.userId);
