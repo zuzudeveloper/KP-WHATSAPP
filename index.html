@@ -1628,8 +1628,9 @@ const GROUPS_KEY="kp-groups-v7";
 let groups=[];
 let groupDraft={step:1,selected:[],avatar:"",name:"",description:"",profileVideo:"",profileGif:"",permissions:{editInfo:"admins",sendMessages:"all"}};
 let currentGroup=null;
+window.kpLegacyGroupBridge={get:()=>currentGroup,set:g=>{currentGroup=g},clear:()=>{currentGroup=null}};
 
-function persistGroups(){localStorage.setItem(GROUPS_KEY,JSON.stringify(groups))}
+function persistGroups(){localStorage.setItem(GROUPS_KEY,JSON.stringify(groups));try{window.kpFirebaseGroupSave?.(groups)}catch(_){}}
 function safeName(n){return String(n||"").replace(/'/g,"\\'").replace(/"/g,"&quot;")}
 function currentUserObject(){
   return {id:"me",name:profileData.name||"You",photo:profileData.photo||"",initial:(profileData.name||"Y").slice(0,2).toUpperCase(),color:"#d7f5ed"};
@@ -2576,10 +2577,45 @@ body.dark #menuModal{background:var(--panel);color:var(--text);border:1px solid 
 })();
 </script>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, runTransaction, collection, query, where, onSnapshot, addDoc, updateDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+<script>
+/* KP WhatsApp standalone Firebase compatibility layer. */
+(function(){
+  const F=window.firebase;
+  if(!F) return;
+  window.initializeApp=(c)=>F.initializeApp(c);
+  window.getAuth=(a)=>F.auth(a);
+  window.onAuthStateChanged=(a,cb)=>a.onAuthStateChanged(cb);
+  window.createUserWithEmailAndPassword=(a,e,p)=>a.createUserWithEmailAndPassword(e,p);
+  window.signInWithEmailAndPassword=(a,e,p)=>a.signInWithEmailAndPassword(e,p);
+  window.signOut=(a)=>a.signOut();
+  window.deleteUser=(u)=>u.delete();
+  window.getFirestore=(a)=>F.firestore(a);
+  window.doc=(db,...parts)=>db.doc(parts.join('/'));
+  window.collection=(db,...parts)=>db.collection(parts.join('/'));
+  window.where=(field,op,value)=>({field,op,value});
+  window.query=(ref,...cs)=>cs.reduce((r,c)=>r.where(c.field,c.op,c.value),ref);
+  window.getDoc=(ref)=>ref.get();
+  window.getDocs=(ref)=>ref.get();
+  window.setDoc=(ref,data,opts)=>opts&&opts.merge?ref.set(data,{merge:true}):ref.set(data);
+  window.updateDoc=(ref,data)=>ref.update(data);
+  window.deleteDoc=(ref)=>ref.delete();
+  window.addDoc=(ref,data)=>ref.add(data);
+  window.onSnapshot=(ref,cb,err)=>ref.onSnapshot(cb,err);
+  window.serverTimestamp=()=>F.firestore.FieldValue.serverTimestamp();
+  window.runTransaction=(db,fn)=>db.runTransaction(async t=>fn({get:r=>t.get(r),set:(r,d,o)=>t.set(r,d,o||{}),update:(r,d)=>t.update(r,d),delete:r=>t.delete(r)}));
+  window.getStorage=(a)=>F.storage(a);
+  window.sRef=(st,path)=>st.ref(path);
+  window.ref=(st,path)=>st.ref(path);
+  window.uploadBytes=(r,file,meta)=>r.put(file,meta);
+  window.uploadBytesResumable=(r,file,meta)=>r.put(file,meta);
+  window.getDownloadURL=(r)=>r.getDownloadURL();
+})();
+</script>
+<script>
 
 const firebaseConfig = {
   apiKey: "AIzaSyAsjCOOYokl8rYb75ixZuSDOTAwJapWHLE",
@@ -2980,7 +3016,7 @@ body.dark .kpNCOption{background:#202c33}body.dark .kpNCSearch input{background:
   function makePage(){
     if(document.getElementById('kpNewChatPage'))return;
     const d=document.createElement('section');d.id='kpNewChatPage';d.className='kpNewChatPage';
-    d.innerHTML=`<div class="kpNCTop"><button class="kpNCBack" onclick="closeKPNewChatPage()" aria-label="Back">‹</button><div><div class="kpNCTitle">New Chat</div><div class="kpNCSub">KP WhatsApp contacts</div></div></div><div class="kpNCOptions"><button class="kpNCOption active" onclick="kpNCChoose('contacts',this)">New Contact</button><button class="kpNCOption" onclick="openGroupCreate();closeKPNewChatPage()">New Group</button><button class="kpNCOption" onclick="toast('New Community')">New Community</button><button class="kpNCOption" onclick="kpNCChoose('contacts',this)">Contacts on KP WhatsApp</button></div><div class="kpNCSearch"><input id="kpNCSearchInput" placeholder="Search name or username" autocomplete="off"></div><div id="kpNCList" class="kpNCList"><div class="kpNCEmpty">Loading contacts…</div></div>`;
+    d.innerHTML=`<div class="kpNCTop"><button class="kpNCBack" onclick="closeKPNewChatPage()" aria-label="Back">‹</button><div><div class="kpNCTitle">New Chat</div><div class="kpNCSub">KP WhatsApp contacts</div></div></div><div class="kpNCOptions"><button class="kpNCOption active" onclick="kpNCChoose('contacts',this)">New Contact</button><button class="kpNCOption" onclick="openGroupCreate();closeKPNewChatPage()">New Group</button><button class="kpNCOption" onclick="kpNCChoose('contacts',this)">Contacts on KP WhatsApp</button></div><div class="kpNCSearch"><input id="kpNCSearchInput" placeholder="Search name or username" autocomplete="off"></div><div id="kpNCList" class="kpNCList"><div class="kpNCEmpty">Loading contacts…</div></div>`;
     document.body.appendChild(d);
     d.querySelector('#kpNCSearchInput').addEventListener('input',renderUsers);d.querySelector('#kpNCSearchInput').addEventListener('keydown',async e=>{if(e.key==='Enter'){const q=e.target.value.trim();if(!q)return;try{const u=await kpFindUser(q);if(u)await kpOpenNewChatUser(u.uid);else toast('User not found');}catch(err){toast('Search failed: '+(err.code||'error'));}}});
   }
@@ -3011,5 +3047,154 @@ body.dark .kpNCOption{background:#202c33}body.dark .kpNCSearch input{background:
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',hook);else hook();setTimeout(hook,500);
 })();
 </script>
-<style>.kpOnlineStatus{color:#25d366!important;font-weight:600}</style></body>
+<style>.kpOnlineStatus{color:#25d366!important;font-weight:600}</style><script>
+/* KP WhatsApp V21 bridge: expose current state to the Firebase upgrade module. */
+window.kpV21State=()=>({chat:typeof currentChat!=='undefined'?currentChat:null,group:typeof currentGroup!=='undefined'?currentGroup:null,profile:typeof currentUserProfile!=='undefined'?currentUserProfile:null});
+</script>
+<style id="kp-v21-working-css">
+.kp21-card{background:var(--panel,#fff);border:1px solid var(--line,#e9edef);border-radius:14px;padding:14px;margin:8px 0}.kp21-title{font-weight:750;font-size:16px}.kp21-muted{font-size:12px;color:var(--muted,#667781);margin-top:3px}.kp21-grid{display:grid;gap:9px}.kp21-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line,#e9edef);border-radius:12px}.kp21-row button,.kp21-btn{padding:9px 12px;border-radius:9px;background:#00a884;color:#fff}.kp21-secondary{background:var(--surface2,#f0f2f5)!important;color:var(--text)!important}.kp21-input,.kp21-textarea{width:100%;border:1px solid var(--line,#e9edef);border-radius:10px;background:var(--surface,#fff);color:var(--text);padding:10px;outline:none}.kp21-textarea{min-height:80px;resize:vertical}.kp21-overlay{position:fixed;inset:0;background:#0007;z-index:1000;display:none;align-items:flex-end;justify-content:center}.kp21-overlay.show{display:flex}.kp21-modal{width:min(600px,100%);max-height:90vh;overflow:auto;background:var(--panel,#fff);border-radius:18px 18px 0 0;padding:16px}.kp21-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}.kp21-location{display:block;padding:10px;border-radius:10px;background:#e8f5e9;color:inherit;text-decoration:none}.kp21-contact{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--surface2,#f0f2f5)}.kp21-contact img,.kp21-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;background:#d7f5ed;display:grid;place-items:center;font-weight:700}.kp21-poll-option{width:100%;text-align:left;padding:10px;border:1px solid var(--line);border-radius:10px;margin-top:6px;background:var(--surface)}.kp21-poll-option:hover{background:var(--surface2)}.kp21-event{padding:10px;border-radius:10px;background:var(--surface2)}
+</style>
+<script>
+const {auth,db}=window.kpFirebase||{};
+const storage=getStorage(window.kpFirebase.firebaseApp);
+const esc=v=>typeof window.escapeHtml==='function'?window.escapeHtml(String(v??'')):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const me=()=>auth?.currentUser?.uid||window.kpV21State?.()?.profile?.uid||null;
+const state=()=>window.kpV21State?.()||{};
+const chat=()=>state().chat;
+const chatId=()=>chat()?.id||null;
+const timeNow=()=>new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+
+function overlay(id,title,body,actions=''){let x=document.getElementById(id);if(x)x.remove();x=document.createElement('div');x.id=id;x.className='kp21-overlay';x.innerHTML=`<div class="kp21-modal"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div class="kp21-title">${esc(title)}</div><button onclick="document.getElementById('${id}').remove()" style="font-size:24px">×</button></div><div style="margin-top:12px">${body}</div>${actions?`<div class="kp21-actions">${actions}</div>`:''}</div>`;document.body.appendChild(x);x.classList.add('show');return x}
+
+let kp21SpecialUnsub=null;
+let kp21PollVotes={};
+let kp21EventRsvps={};
+
+async function sendSpecial(payload){
+  const id=chatId(),u=me();if(!id||!u){toast('Open a Firebase chat first');return null}
+  const group=!!chat()?.group;
+  const d={...payload,senderId:u,createdAt:serverTimestamp(),time:timeNow(),dateKey:new Date().toISOString().slice(0,10),read:false};
+  if(group){
+    const r=await addDoc(collection(db,'groups',id,'messages'),d);
+    await setDoc(doc(db,'groups',id),{lastMessage:payload.preview||payload.text||payload.type||'Message',lastMessageAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true});
+    return r.id;
+  }
+  const r=await addDoc(collection(db,'chats',id,'messages'),d);
+  const peer=chat()?.peerUid;
+  const update={lastMessage:payload.preview||payload.text||payload.type||'Message',lastMessageAt:serverTimestamp(),updatedAt:serverTimestamp()};
+  if(peer) update[`unreadCounts.${peer}`]=firebase.firestore.FieldValue.increment(1);
+  await setDoc(doc(db,'chats',id),update,{merge:true});
+  return r.id;
+}
+
+window.kp21Location=()=>{if(!navigator.geolocation){toast('Location is not supported by this browser');return}navigator.geolocation.getCurrentPosition(async p=>{try{await sendSpecial({type:'location',latitude:p.coords.latitude,longitude:p.coords.longitude,preview:'Location'});toast('Location sent')}catch(e){toast('Location failed: '+(e.code||e.message||'error'))}},e=>toast(e.code===1?'Location permission denied':'Could not get your location'),{enableHighAccuracy:true,timeout:15000,maximumAge:0})};
+
+window.kp21Contact=async()=>{try{const snap=await getDocs(collection(db,'users'));const arr=snap.docs.map(d=>({uid:d.id,...d.data()})).filter(x=>x.uid!==me()).sort((a,b)=>(a.displayName||a.username||'').localeCompare(b.displayName||b.username||''));const rows=arr.map(u=>`<button class="kp21-row" style="width:100%;text-align:left" onclick="kp21SendContact('${esc(u.uid)}')"><div class="kp21-avatar">${u.photoURL?`<img src="${esc(u.photoURL)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`:esc((u.displayName||u.username||'U').slice(0,2).toUpperCase())}</div><div><b>${esc(u.displayName||u.username||'User')}</b><div class="kp21-muted">@${esc(u.username||'')}</div></div></button>`).join('');overlay('kp21ContactModal','Share contact',rows||'<div class="kp21-muted">No contacts found.</div>')}catch(e){toast('Contacts failed: '+(e.code||e.message||'error'))}};
+window.kp21SendContact=async uid=>{try{const s=await getDoc(doc(db,'users',uid));if(!s.exists())throw new Error('User not found');const u={uid,...s.data()};await sendSpecial({type:'contact',contact:{uid:u.uid,name:u.displayName||u.username||'User',username:u.username||'',photoURL:u.photoURL||'',mobile:u.mobile||'',gameName:u.gameName||'',gameId:u.gameId||''},preview:'Contact'});document.getElementById('kp21ContactModal')?.remove();toast('Contact sent')}catch(e){toast('Contact failed: '+(e.code||e.message||'error'))}};
+
+window.kp21Poll=()=>{overlay('kp21PollModal','Create poll',`<div class="kp21-grid"><input id="kp21PollQ" class="kp21-input" placeholder="Question"><input class="kp21-input kp21PollOpt" placeholder="Option 1"><input class="kp21-input kp21PollOpt" placeholder="Option 2"><input class="kp21-input kp21PollOpt" placeholder="Option 3"><input class="kp21-input kp21PollOpt" placeholder="Option 4"></div>`,`<button class="kp21-btn" onclick="kp21SendPoll()">Send poll</button>`)};
+window.kp21SendPoll=async()=>{const q=document.getElementById('kp21PollQ')?.value.trim();const opts=[...document.querySelectorAll('.kp21PollOpt')].map(x=>x.value.trim()).filter(Boolean);if(!q||opts.length<2){toast('Enter a question and at least 2 options');return}try{const mid=await sendSpecial({type:'poll',poll:{question:q,options:opts,createdBy:me()},preview:'Poll'});document.getElementById('kp21PollModal')?.remove();toast('Poll sent');return mid}catch(e){toast('Poll failed: '+(e.code||e.message||'error'))}};
+window.kp21VotePoll=async(mid,idx)=>{try{const cid=chatId();if(!cid)return;const base=chat()?.group?'groups':'chats';const mref=doc(db,base,cid,'messages',mid);const ms=await getDoc(mref);if(!ms.exists())return;const options=ms.data()?.poll?.options||[];if(idx<0||idx>=options.length)return;const u=me();const vref=doc(db,base,cid,'messages',mid,'votes',u);const vs=await getDoc(vref);if(vs.exists()){toast('You already voted');return}await setDoc(vref,{uid:u,option:Number(idx),createdAt:serverTimestamp()});toast('Vote recorded');renderCurrentSpecial();}catch(e){toast('Vote failed: '+(e.code||e.message||'permission-denied'))}};
+
+window.kp21Event=()=>{overlay('kp21EventModal','Create event',`<div class="kp21-grid"><input id="kp21EventTitle" class="kp21-input" placeholder="Event title"><input id="kp21EventDate" class="kp21-input" type="date"><input id="kp21EventTime" class="kp21-input" type="time"><input id="kp21EventLocation" class="kp21-input" placeholder="Location"><textarea id="kp21EventDesc" class="kp21-textarea" placeholder="Description"></textarea></div>`,`<button class="kp21-btn" onclick="kp21SendEvent()">Send event</button>`)};
+window.kp21SendEvent=async()=>{const title=document.getElementById('kp21EventTitle')?.value.trim(),date=document.getElementById('kp21EventDate')?.value,time=document.getElementById('kp21EventTime')?.value,location=document.getElementById('kp21EventLocation')?.value.trim(),desc=document.getElementById('kp21EventDesc')?.value.trim();if(!title||!date){toast('Enter event title and date');return}try{await sendSpecial({type:'event',event:{title,date,time:time||'',location,description:desc,createdBy:me()},preview:'Event'});document.getElementById('kp21EventModal')?.remove();toast('Event sent')}catch(e){toast('Event failed: '+(e.code||e.message||'error'))}};
+window.kp21Rsvp=async(mid,status)=>{try{const cid=chatId(),base=chat()?.group?'groups':'chats',u=me();await setDoc(doc(db,base,cid,'messages',mid,'rsvps',u),{uid:u,status,updatedAt:serverTimestamp()},{merge:true});toast('Response saved');renderCurrentSpecial()}catch(e){toast('Response failed: '+(e.code||e.message||'permission-denied'))}};
+
+async function uploadFile(file){const u=me();if(!u)throw new Error('LOGIN_REQUIRED');const safe=(file.name||'file').replace(/[^a-zA-Z0-9._-]/g,'_');const path=`chatMedia/${u}/${Date.now()}_${safe}`;const r=ref(storage,path);const task=uploadBytesResumable(r,file,{contentType:file.type||'application/octet-stream'});await new Promise((res,rej)=>{task.on(firebase.storage.TaskEvent.STATE_CHANGED,()=>{},rej,res)});return getDownloadURL(r)}
+window.kp21PickMedia=(accept,capture='')=>{let i=document.getElementById('kp21FileInput');if(!i){i=document.createElement('input');i.type='file';i.id='kp21FileInput';i.style.display='none';document.body.appendChild(i)}i.accept=accept;i.capture=capture;i.onchange=async()=>{const f=i.files?.[0];if(!f)return;try{toast('Uploading…');const url=await uploadFile(f);const type=f.type.startsWith('video/')?'video':f.type.startsWith('audio/')?'audio':f.type.startsWith('image/')?'photo':'document';await sendSpecial({type,mediaUrl:url,fileName:f.name,fileType:f.type,fileSize:f.size,preview:type==='document'?`📄 ${f.name}`:type.toUpperCase()});toast(`${type} sent`)}catch(e){console.error(e);toast('Upload failed: '+(e.code||e.message||'error'))}finally{i.value=''}};i.click()};
+window.kp21Voice=async()=>{if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){toast('Voice recording is not supported');return}if(window.kp21ActiveRecorder){try{window.kp21ActiveRecorder.stop()}catch(_){}return}let stream,rec,chunks=[];try{stream=await navigator.mediaDevices.getUserMedia({audio:true});rec=new MediaRecorder(stream);rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);rec.onstop=async()=>{try{const blob=new Blob(chunks,{type:rec.mimeType||'audio/webm'});const f=new File([blob],`voice_${Date.now()}.webm`,{type:blob.type});toast('Uploading voice…');const url=await uploadFile(f);await sendSpecial({type:'audio',mediaUrl:url,fileName:f.name,fileType:f.type,preview:'Voice message'});toast('Voice message sent')}catch(e){toast('Voice upload failed: '+(e.code||e.message||'error'))}finally{stream.getTracks().forEach(t=>t.stop());window.kp21ActiveRecorder=null}};rec.start();window.kp21ActiveRecorder=rec;toast('Recording… tap mic/send again to stop')}catch(e){toast('Microphone permission denied')}};
+
+let typingTimer=null,typingUnsub=null;async function setTyping(v){const id=chatId(),u=me();if(!id||!u)return;try{await updateDoc(doc(db,chat()?.group?'groups':'chats',id),{[`typing.${u}`]:v?serverTimestamp():null})}catch(_) {}}
+window.kp21Typing=()=>{clearTimeout(typingTimer);setTyping(true);typingTimer=setTimeout(()=>setTyping(false),1800)};
+window.kp21MarkRead=async()=>{const id=chatId(),u=me();if(!id||!u)return;try{await setDoc(doc(db,'chats',id),{[`unreadCounts.${u}`]:0,[`readBy.${u}`]:serverTimestamp()},{merge:true})}catch(_) {}};
+
+async function loadVotesForMessage(base,cid,mid){const snap=await getDocs(collection(db,base,cid,'messages',mid,'votes'));return snap.docs.map(d=>d.data())}
+async function loadRsvpsForMessage(base,cid,mid){const snap=await getDocs(collection(db,base,cid,'messages',mid,'rsvps'));return snap.docs.map(d=>d.data())}
+async function renderCurrentSpecial(){
+  const c=chat();if(!c?.id)return;const base=c.group?'groups':'chats';const arr=messages[c.id]||[];
+  const special=arr.filter(m=>m.type==='poll'||m.type==='event');
+  for(const m of special){try{if(m.type==='poll')kp21PollVotes[m.id]=await loadVotesForMessage(base,c.id,m.id);else kp21EventRsvps[m.id]=await loadRsvpsForMessage(base,c.id,m.id)}catch(_){}}
+  const el=document.getElementById('messages');if(el){el.innerHTML=withDaySeparators(arr,window.messageHTML||messageHTML);el.scrollTop=el.scrollHeight;}
+}
+
+const oldMessageHTML=window.messageHTML;
+window.messageHTML=function(m){
+ if(m.type==='location')return `<div class="msg ${m.out?'out':'in'}"><div class="bubble"><a class="kp21-location" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${encodeURIComponent(m.latitude)},${encodeURIComponent(m.longitude)}">📍 <b>Location</b><br><small>${Number(m.latitude).toFixed(5)}, ${Number(m.longitude).toFixed(5)}</small></a><span class="meta">${esc(m.time||timeNow())}</span></div></div>`;
+ if(m.type==='contact'){const c=m.contact||{};return `<div class="msg ${m.out?'out':'in'}"><div class="bubble"><div class="kp21-contact">${c.photoURL?`<img src="${esc(c.photoURL)}">`:`<div class="kp21-avatar">${esc((c.name||'U').slice(0,2).toUpperCase())}</div>`}<div><b>${esc(c.name||'User')}</b><div class="kp21-muted">@${esc(c.username||'')}</div>${c.mobile?`<div class="kp21-muted">${esc(c.mobile)}</div>`:''}</div></div><span class="meta">${esc(m.time||timeNow())}</span></div></div>`}
+ if(m.type==='poll'){const p=m.poll||{},votes=kp21PollVotes[m.id]||[],counts=(p.options||[]).map((_,i)=>votes.filter(v=>Number(v.option)===i).length),mine=votes.find(v=>v.uid===me());return `<div class="msg ${m.out?'out':'in'}"><div class="bubble"><b>📊 ${esc(p.question||'Poll')}</b>${(p.options||[]).map((o,i)=>`<button class="kp21-poll-option" ${mine?'disabled':''} onclick="kp21VotePoll('${esc(m.id)}',${i})">${esc(o)} <span style="float:right">${counts[i]||0}</span></button>`).join('')}<div class="kp21-muted">${votes.length} vote${votes.length===1?'':'s'}</div><span class="meta">${esc(m.time||timeNow())}</span></div></div>`}
+ if(m.type==='event'){const e=m.event||{},a=kp21EventRsvps[m.id]||[],mine=a.find(x=>x.uid===me());const cnt=s=>a.filter(x=>x.status===s).length;return `<div class="msg ${m.out?'out':'in'}"><div class="bubble"><div class="kp21-event"><b>📅 ${esc(e.title||'Event')}</b><div>${esc(e.date||'')} ${esc(e.time||'')}</div>${e.location?`<div>📍 ${esc(e.location)}</div>`:''}<div class="kp21-muted">${esc(e.description||'')}</div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px"><button class="kp21-btn" onclick="kp21Rsvp('${esc(m.id)}','going')">Going (${cnt('going')})</button><button class="kp21-btn kp21-secondary" onclick="kp21Rsvp('${esc(m.id)}','maybe')">Maybe (${cnt('maybe')})</button><button class="kp21-btn kp21-secondary" onclick="kp21Rsvp('${esc(m.id)}','no')">Can't go (${cnt('no')})</button></div>${mine?`<div class="kp21-muted">Your response: ${esc(mine.status)}</div>`:''}</div><span class="meta">${esc(m.time||timeNow())}</span></div></div>`}
+ if(m.type==='audio')return `<div class="msg ${m.out?'out':'in'}"><div class="bubble"><audio controls preload="metadata" src="${esc(m.mediaUrl||'')}"></audio><span class="meta">${esc(m.time||timeNow())}</span></div></div>`;
+ if(m.type==='document')return `<div class="msg ${m.out?'out':'in'}"><div class="bubble"><a href="${esc(m.mediaUrl||'')}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">📄 <b>${esc(m.fileName||'Document')}</b><br><small>${m.fileSize?Math.ceil(m.fileSize/1024)+' KB':''}</small></a><span class="meta">${esc(m.time||timeNow())}</span></div></div>`;
+ return oldMessageHTML?oldMessageHTML(m):'';
+};
+
+/* ---------- Personal chat: unread/read/realtime ---------- */
+let kp21ChatListUnsub=null;
+function kp21FormatTs(v){try{return v?.toDate?v.toDate().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):''}catch(_){return ''}}
+async function kp21LoadChats(){
+ const uid=me();if(!uid)return;if(kp21ChatListUnsub)kp21ChatListUnsub();
+ kp21ChatListUnsub=onSnapshot(query(collection(db,'chats'),where('members','array-contains',uid)),async snap=>{
+  const next=[];for(const d of snap.docs){const x=d.data(),peerUid=(x.members||[]).find(id=>id!==uid);if(!peerUid)continue;let p=null;try{p=await getDoc(doc(db,'users',peerUid));p=p.exists()?{uid:peerUid,...p.data()}:null}catch(_){}const meta=x.peer?.[peerUid]||{};next.push({id:d.id,chatId:d.id,peerUid,name:p?.displayName||meta.name||p?.username||'User',username:p?.username||meta.username||'',photo:p?.photoURL||meta.photo||'',initial:(p?.displayName||p?.username||meta.name||'U').slice(0,2).toUpperCase(),color:'#d7f5ed',preview:x.lastMessage||'',time:kp21FormatTs(x.lastMessageAt),unread:Number(x.unreadCounts?.[uid]||0),muted:!!x.muted?.[uid],blocked:!!x.blocked?.[uid]});}
+  next.sort((a,b)=>(b.time||'').localeCompare(a.time||''));chats=next;renderChats();if(currentChat?.id){const fresh=next.find(x=>x.id===currentChat.id);if(fresh)currentChat={...currentChat,...fresh}}
+ },e=>console.error('Chat list sync',e));
+}
+window.kp21LoadChats=kp21LoadChats;
+
+const oldOpenChat=window.openChat;window.openChat=async function(idOrName){let c=chats.find(x=>x.id===idOrName||x.name===idOrName);if(!c&&currentChat&&(currentChat.id===idOrName||currentChat.chatId===idOrName))c=currentChat;if(!c&&idOrName?.uid)c=typeof kpProfileToChat==='function'?kpProfileToChat(idOrName):null;if(!c){toast('Chat not found');return}currentChat=c;document.getElementById('chatName').textContent=c.name;document.getElementById('chatStatus').textContent='checking…';document.getElementById('chatAvatar').innerHTML=avatar(c);window.kpWatchPeerPresence?.(c.peerUid||c.uid||c.userId);go('chat');if(window.kpListenChat)kpListenChat(c.id);await kp21MarkRead();setTimeout(renderCurrentSpecial,80);};
+
+window.sendMessage=async function(){
+ const input=document.getElementById('messageInput'),text=input.value.trim();if(!text||!currentChat?.id)return;const uid=me();if(!uid)return;
+ if(currentChat.group){return window.kp21SendGroupText(text)}
+ input.value='';autoGrow(input);updateSend();
+ const payload={text,senderId:uid,type:'text',createdAt:serverTimestamp(),dateKey:dateKey(),read:false};if(replyDraft){payload.reply=replyDraft.text;payload.replySender=replyDraft.sender;cancelReply()}
+ try{await addDoc(collection(db,'chats',currentChat.id,'messages'),payload);const peer=currentChat.peerUid;const upd={lastMessage:text,lastMessageAt:serverTimestamp(),updatedAt:serverTimestamp()};if(peer)upd[`unreadCounts.${peer}`]=firebase.firestore.FieldValue.increment(1);await setDoc(doc(db,'chats',currentChat.id),upd,{merge:true})}catch(e){input.value=text;updateSend();toast('Message failed: '+(e.code||'permission-denied'))}
+};
+
+window.starSelectedMessages=async()=>{const selected=typeof selectedMessages!=='undefined'?selectedMessages:[];let ok=0;for(const x of selected){const m=x.m;if(m.id&&m.senderId===me()&&!currentChat?.group){try{await updateDoc(doc(db,'chats',chatId(),'messages',m.id),{starred:true}) ;ok++}catch(_){}}}clearMessageSelection();toast(ok?`Starred ${ok} message${ok>1?'s':''}`:'Only your own Firebase messages can be starred')};
+window.deleteSelectedMessages=async()=>{const selected=typeof selectedMessages!=='undefined'?selectedMessages:[];let ok=0;for(const x of selected){const m=x.m;if(!m.id||m.senderId!==me())continue;try{const base=currentChat?.group?'groups':'chats';await updateDoc(doc(db,base,chatId(),'messages',m.id),{deleted:true,text:'This message was deleted',mediaUrl:'',gifUrl:'',previewUrl:''});ok++}catch(_){}}clearMessageSelection();toast(ok?`Deleted ${ok} message${ok>1?'s':''}`:'Only your own Firebase messages can be deleted')};
+
+window.forwardSelected=async()=>{const selected=(typeof selectedMessages!=='undefined'?selectedMessages:[]).map(x=>x.m).filter(m=>!m.system);const targets=typeof forwardTargets!=='undefined'?forwardTargets:[];if(!selected.length||!targets.length){toast('Select a message and a chat');return}for(const i of targets){const c=chats[i];if(!c?.id)continue;for(const m of selected){try{await addDoc(collection(db,'chats',c.id,'messages'),{text:m.text||'',type:m.type||'text',mediaUrl:m.mediaUrl||'',gifUrl:m.gifUrl||'',previewUrl:m.previewUrl||'',forwarded:true,senderId:me(),createdAt:serverTimestamp(),dateKey:dateKey(),read:false}) ;await setDoc(doc(db,'chats',c.id),{lastMessage:'Forwarded message',lastMessageAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true})}catch(_) {}}}closeForwardPicker();clearMessageSelection();toast('Message forwarded')};
+
+/* ---------- Firebase Groups ---------- */
+let kp21GroupMsgUnsub=null,kp21GroupsUnsub=null;
+function localGroupFromFirebase(x,profiles){const uid=me();const members=(x.members||[]).map(id=>id===uid?{id:'me',uid:id,name:state().profile?.displayName||state().profile?.username||'You',photo:state().profile?.photoURL||'',initial:(state().profile?.displayName||'Y').slice(0,2).toUpperCase(),color:'#d7f5ed'}:(profiles[id]||{id,uid:id,name:'Member',photo:'',initial:'M',color:'#d7f5ed'}));return {id:x.id||x.firebaseId||'',firebaseId:x.id||'',name:x.name||'Group',description:x.description||'',avatar:x.avatar||'',profileVideo:x.profileVideo||'',profileGif:x.profileGif||'',createdAt:x.createdAt||new Date().toISOString(),createdBy:x.createdBy===uid?'me':x.createdBy,admins:(x.admins||[]).map(a=>a===uid?'me':a),members,permissions:x.permissions||{editInfo:'admins',sendMessages:'all'},inviteCode:x.inviteCode||''}}
+window.kpFirebaseGroupSave=async function(arr){const uid=me();if(!uid)return;for(const g of arr||[]){if(!g.firebaseId)continue;const members=(g.members||[]).map(m=>m.uid||m.id).filter(Boolean).map(x=>x==='me'?uid:x);const admins=(g.admins||[]).map(x=>x==='me'?uid:x);try{await setDoc(doc(db,'groups',g.firebaseId),{id:g.firebaseId,name:g.name,description:g.description||'',avatar:g.avatar||'',profileVideo:g.profileVideo||'',profileGif:g.profileGif||'',members,admins,permissions:g.permissions||{},inviteCode:g.inviteCode||'',createdBy:g.createdBy==='me'?uid:g.createdBy,updatedAt:serverTimestamp()},{merge:true})}catch(e){console.warn('group save',e)}}};
+async function kp21SyncGroups(){const uid=me();if(!uid)return;if(kp21GroupsUnsub)kp21GroupsUnsub();kp21GroupsUnsub=onSnapshot(query(collection(db,'groups'),where('members','array-contains',uid)),async snap=>{const raw=snap.docs.map(d=>({id:d.id,...d.data()}));const all={};for(const g of raw)for(const id of g.members||[]){if(id===uid)continue;if(all[id])continue;try{const u=await getDoc(doc(db,'users',id));all[id]=u.exists()?{id,uid:id,name:u.data().displayName||u.data().username||'Member',photo:u.data().photoURL||'',initial:(u.data().displayName||u.data().username||'M').slice(0,2).toUpperCase(),color:'#d7f5ed'}:{id,uid:id,name:'Member',photo:'',initial:'M',color:'#d7f5ed'}}catch(_){} }const next=raw.map(g=>localGroupFromFirebase(g,all));groups.splice(0,groups.length,...next);persistGroups();renderChats();if(currentGroup?.id){const f=next.find(g=>g.id===currentGroup.id);if(f)currentGroup=f}},e=>console.error('Groups sync',e))}
+window.kp21SyncGroups=kp21SyncGroups;
+
+window.createGroupV7=async function(){const name=(document.getElementById('groupNameInput')?.value||groupDraft.name).trim();if(!name){toast('Enter a group name');return}if(!groupDraft.selected.length){toast('Select at least one member');return}const uid=me();if(!uid){toast('Please login first');return}const peerIds=groupDraft.selected.map(id=>{const n=String(id);if(n.startsWith('c')){const i=Number(n.slice(1));return chats[i]?.peerUid||null}return n}).filter(x=>x&&x!==uid);if(!peerIds.length){toast('Select at least one KP WhatsApp contact');return}try{const members=[uid,...peerIds.filter((x,i,a)=>a.indexOf(x)===i)];const gid='g_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);const data={id:gid,name,description:document.getElementById('groupDescInput')?.value.trim()||'',avatar:document.getElementById('groupAvatarUrl')?.value.trim()||'',profileVideo:document.getElementById('groupVideoInput')?.value.trim()||'',createdBy:uid,admins:[uid],members,permissions:groupDraft.permissions||{editInfo:'admins',sendMessages:'all'},inviteCode:Math.random().toString(36).slice(2,10),createdAt:serverTimestamp(),updatedAt:serverTimestamp(),lastMessage:'You created this group',lastMessageAt:serverTimestamp()};await setDoc(doc(db,'groups',gid),data);await addDoc(collection(db,'groups',gid,'messages'),{system:true,text:'You created this group',senderId:uid,createdAt:serverTimestamp(),time:timeNow(),dateKey:dateKey()});closeGroupCreate();await kp21SyncGroups();const g=groups.find(x=>x.id===gid);if(g)window.openGroup(gid);toast('Group created')}catch(e){toast('Group creation failed: '+(e.code||e.message||'error'))}};
+
+const oldOpenGroup=window.openGroup;window.openGroup=async function(id){let g=groups.find(x=>x.id===id);if(!g){try{const s=await getDoc(doc(db,'groups',id));if(!s.exists()){toast('Group not found');return}const x={id,...s.data()};const profiles={};for(const u of x.members||[]){if(u===me())continue;try{const p=await getDoc(doc(db,'users',u));if(p.exists())profiles[u]={id:u,uid:u,name:p.data().displayName||p.data().username||'Member',photo:p.data().photoURL||'',initial:(p.data().displayName||p.data().username||'M').slice(0,2).toUpperCase(),color:'#d7f5ed'}}catch(_){} }g=localGroupFromFirebase(x,profiles);groups.unshift(g);persistGroups()}catch(e){toast('Group load failed: '+(e.code||'error'));return}}currentGroup=g;currentChat={id:g.id,chatId:g.id,name:g.name,group:true,peerUid:null};document.getElementById('chatName').textContent=g.name;document.getElementById('chatStatus').textContent=`${g.members.length} members`;document.getElementById('chatAvatar').innerHTML=groupAvatarHTML(g,'groupAvatar small');go('chat');if(kp21GroupMsgUnsub)kp21GroupMsgUnsub();kp21GroupMsgUnsub=onSnapshot(collection(db,'groups',g.id,'messages'),snap=>{const arr=snap.docs.map(d=>{const x=d.data();return {id:d.id,...x,out:x.senderId===me(),time:x.createdAt?.toDate?x.createdAt.toDate().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):(x.time||''),dateKey:x.dateKey||''}}).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));messages[g.id]=arr;const el=document.getElementById('messages');if(el){el.innerHTML=withDaySeparators(arr,groupMessageHTML);el.scrollTop=el.scrollHeight;}renderCurrentSpecial();});document.getElementById('chatAvatar').onclick=()=>openGroupInfo(g.id);document.getElementById('chatName').onclick=()=>openGroupInfo(g.id)};
+
+window.kp21SendGroupText=async text=>{const g=currentGroup;if(!g?.id)return;if(g.permissions?.sendMessages==='admins'&&!g.admins.includes('me')){toast('Only admins can send messages');return}const uid=me();try{await addDoc(collection(db,'groups',g.id,'messages'),{text,senderId:uid,type:'text',createdAt:serverTimestamp(),dateKey:dateKey(),time:timeNow(),read:false,reply:replyDraft?.text||''});if(replyDraft)cancelReply();await setDoc(doc(db,'groups',g.id),{lastMessage:text,lastMessageAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true})}catch(e){toast('Group message failed: '+(e.code||'permission-denied'))}};
+
+/* Make group GIF/sticker sending Firebase-backed. */
+window.sendGiphyItem=async function(item,sendUrl){if(!sendUrl)return;const type=(typeof giphyMode!=='undefined'&&giphyMode==='sticker')?'sticker':'gif';const uid=me();try{if(currentChat?.group){if(currentGroup?.permissions?.sendMessages==='admins'&&!currentGroup.admins.includes('me')){toast('Only admins can send messages');return}await addDoc(collection(db,'groups',currentChat.id,'messages'),{type,gifUrl:sendUrl,previewUrl:item.images?.fixed_width?.webp||item.images?.fixed_width?.url||item.images?.fixed_width_small?.webp||sendUrl,giphyId:item.id,title:item.title||'',senderId:uid,createdAt:serverTimestamp(),dateKey:dateKey(),time:timeNow(),read:false});await setDoc(doc(db,'groups',currentChat.id),{lastMessage:type==='sticker'?'Sticker':'GIF',lastMessageAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true})}else{await addDoc(collection(db,'chats',currentChat.id,'messages'),{type,gifUrl:sendUrl,previewUrl:item.images?.fixed_width?.webp||item.images?.fixed_width?.url||item.images?.fixed_width_small?.webp||sendUrl,giphyId:item.id,title:item.title||'',senderId:uid,createdAt:serverTimestamp(),dateKey:dateKey(),read:false});const peer=currentChat.peerUid;const upd={lastMessage:type==='sticker'?'Sticker':'GIF',lastMessageAt:serverTimestamp(),updatedAt:serverTimestamp()};if(peer)upd[`unreadCounts.${peer}`]=firebase.firestore.FieldValue.increment(1);await setDoc(doc(db,'chats',currentChat.id),upd,{merge:true})}closeGifPicker();toast(type==='sticker'?'Sticker sent':'GIF sent')}catch(e){toast((type==='sticker'?'Sticker':'GIF')+' failed: '+(e.code||e.message||'error'))}};
+
+/* Patch group persistence: existing admin controls call persistGroups(). */
+const oldPersistGroups=window.persistGroups;window.persistGroups=function(){try{localStorage.setItem(GROUPS_KEY,JSON.stringify(groups))}catch(_){}window.kpFirebaseGroupSave?.(groups)};
+
+/* In-app chat context actions. */
+const oldContextAction=window.contextAction;window.contextAction=function(action){if(action==='clear'&&currentChat?.id){const base=currentChat.group?'groups':'chats';getDocs(collection(db,base,currentChat.id,'messages')).then(s=>Promise.all(s.docs.filter(d=>d.data().senderId===me()).map(d=>deleteDoc(d.ref)))).then(()=>{toast('Your messages cleared');renderCurrentSpecial()}).catch(e=>toast('Clear chat failed: '+(e.code||e.message||'error')));closeContextMenu();return}if(action==='mute'&&currentChat?.id){setDoc(doc(db,'chats',currentChat.id),{[`muted.${me()}`]:true},{merge:true}).then(()=>toast('Chat muted')).catch(e=>toast('Mute failed: '+(e.code||'error')));closeContextMenu();return}if(action==='export'&&currentChat?.id){const arr=messages[currentChat.id]||[];const txt=arr.map(m=>`[${m.time||''}] ${m.out?'You':'Other'}: ${m.text||m.type||''}`).join('\n');const blob=new Blob([txt],{type:'text/plain'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='kp-whatsapp-chat.txt';a.click();URL.revokeObjectURL(a.href);toast('Chat exported');closeContextMenu();return}return oldContextAction?.(action)};
+
+/* Replace local Firebase-chat startup with our unread-aware listener. */
+try{if(typeof kpLoadChats==='function')kpLoadChats=kp21LoadChats}catch(_){}
+
+/* Expose legacy Firebase helpers to classic UI scripts. */
+window.kpFindUser=typeof kpFindUser==='function'?kpFindUser:window.kpFindUser;window.kpCreateOrOpenUserChat=typeof kpCreateOrOpenUserChat==='function'?kpCreateOrOpenUserChat:window.kpCreateOrOpenUserChat;window.kpListenChat=typeof kpListenChat==='function'?kpListenChat:window.kpListenChat;
+
+function patchAttachments(){document.querySelectorAll('.attachItem').forEach(el=>{const t=(el.textContent||'').trim().toLowerCase();if(t==='location')el.onclick=()=>{closeSheets();kp21Location()};else if(t==='contact')el.onclick=()=>{closeSheets();kp21Contact()};else if(t==='poll')el.onclick=()=>{closeSheets();kp21Poll()};else if(t==='event')el.onclick=()=>{closeSheets();kp21Event()};else if(t==='document')el.onclick=()=>{closeSheets();kp21PickMedia('*/*')};else if(t==='gallery')el.onclick=()=>{closeSheets();kp21PickMedia('image/*,video/*')};else if(t==='camera')el.onclick=()=>{closeSheets();kp21PickMedia('image/*,video/*','environment')}})}
+function patchComposer(){const input=document.getElementById('messageInput');if(input&&!input.dataset.kp22){input.dataset.kp22='1';input.addEventListener('input',kp21Typing)}const send=document.getElementById('sendBtn');if(send&&!send.dataset.kp22){send.dataset.kp22='1';send.onclick=()=>{if(window.kp21ActiveRecorder){try{window.kp21ActiveRecorder.stop()}catch(_){}return}if((input?.value||'').trim())window.sendMessage();else window.kp21Voice()}}}
+function patch(){patchAttachments();patchComposer()}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',patch);else patch();setInterval(patch,1200);
+
+/* Status Firebase sync */
+window.kp21SaveStatus=async()=>{const u=me();if(!u)return;const text=document.getElementById('kp21StatusText')?.value.trim(),url=document.getElementById('kp21StatusUrl')?.value.trim();if(!text&&!url){toast('Write something or add a URL');return}try{const id='st_'+Date.now().toString(36);await setDoc(doc(db,'users',u,'statuses',id),{id,text,url,createdAt:serverTimestamp(),expiresAt:new Date(Date.now()+86400000).toISOString()});document.getElementById('kp21StatusModal')?.remove();toast('Status posted')}catch(e){toast('Status failed: '+(e.code||e.message||'error'))}};
+
+function kp22Start(){if(!auth?.currentUser)return;try{kp21LoadChats();kp21SyncGroups()}catch(e){console.error(e)}}
+if(auth){onAuthStateChanged(auth,u=>{if(u)setTimeout(kp22Start,200)})}
+console.log('KP WhatsApp V22 Firebase full working upgrade loaded');
+</script>
+
+</body>
 </html>
