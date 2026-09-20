@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#070707">
 <title>KP WhatsApp</title>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js">
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script><script>
 /* ================= FINAL PRODUCTION PATCH ================= */
 let selectedMessageIds=new Set();
 let profileUnsubs={};
@@ -1817,13 +1817,19 @@ function renderChats(){
  const q=(document.getElementById('search')?.value||'').toLowerCase().trim();
  const arr=chats.filter(c=>(activeTab==='all'||(activeTab==='unread'&&Number(c.unread)>0)||(activeTab==='groups'&&c.group))&&(((c.name||'')+' '+(c.username||'')).toLowerCase().includes(q)));
  arr.sort((a,b)=>(b.sortTime||0)-(a.sortTime||0));
- list.innerHTML=arr.map(c=>{
+ const kpaiRow = (!q || 'kpai'.includes(q) || 'ai assistant'.includes(q)) && activeTab==='all' ? `
+    <div class="chatRow kpaiChatRow" onclick="openKPAI()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openKPAI()}">
+      <div class="avatar kpaiListAvatar"><div class="kpaiMiniOrb"></div></div>
+      <div class="chatMeta"><div class="chatName"><b>KPAI</b><small>AI assistant</small></div><div class="chatPreview">Ask KPAI anything…</div></div>
+      <div class="chatSide"><small>AI</small></div>
+    </div>` : '';
+ list.innerHTML=kpaiRow + arr.map(c=>{
    const url=c.group?c.avatar:c.photoURL;
    const av=url?'<div class="avatar green"><img src="'+escapeHtml(url)+'" alt=""></div>':'<div class="avatar green">'+escapeHtml(c.initial||'U')+'</div>';
    const badge=Number(c.unread||0)>0?'<span class="unread">'+Number(c.unread||0)+'</span>':'';
    const cid=String(c.id).replace(/'/g,"\\'");
    return '<div class="chatRow '+(current?.id===c.id?'selected':'')+'" onclick="openChat(\''+cid+'\')">'+av+'<div class="chatMeta"><div class="chatName"><b>'+escapeHtml(c.name||'User')+'</b>'+(c.username&&!c.group?'<small>@'+escapeHtml(c.username)+'</small>':'')+'</div><div class="chatPreview">'+escapeHtml(c.preview||'No messages yet')+'</div></div><div class="chatSide"><small>'+escapeHtml(c.time||'')+'</small>'+badge+'</div></div>';
- }).join('')||'<div class="empty">No chats yet.<br>Tap + to start a new chat.</div>';
+ }).join('')||(kpaiRow || '<div class="empty">No chats yet.<br>Tap + to start a new chat.</div>');
 }
 window.renderChats=renderChats;
 
@@ -1951,56 +1957,74 @@ async function sendKPAI(){
 }
 </script>
 <script>
-/* KPAI TAP FIX — final robust opener */
+/* KPAI TAP FIX — final robust opener v2 - FIXED */
 (function(){
   function kpaiOpenFixed(){
-    const pv=document.getElementById('pageView');
-    const pi=document.getElementById('pageInner');
-    if(!pv || !pi){
-      console.error('KPAI: page container not found');
-      return;
+    try{
+      const pv=document.getElementById('pageView');
+      const pi=document.getElementById('pageInner');
+      if(!pv || !pi){
+        console.error('KPAI: page container not found');
+        alert('KPAI page container not found');
+        return;
+      }
+      // force show
+      pv.classList.add('show');
+      pv.style.display='block';
+      pi.innerHTML=`
+        <div class="kpaiShell">
+          <div class="kpaiTop">
+            <button class="kpaiBack" type="button" aria-label="Back" onclick="document.getElementById('pageView').classList.remove('show'); document.getElementById('pageView').style.display='none'; if(typeof closePage==='function') closePage(); else document.getElementById('pageView').classList.remove('show');">
+              <svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="kpaiOrb2"></div>
+            <div class="kpaiHeadText"><b>KPAI</b><small><span class="kpaiOnlineDot"></span>AI assistant</small></div>
+            <button class="kpaiClear" type="button" onclick="if(typeof clearKPAIChat==='function') clearKPAIChat()" aria-label="Clear chat">
+              <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div class="kpaiWelcome"><div class="kpaiWelcomeOrb"></div><h2>How can KPAI help?</h2><p>Ask KPAI anything about KP WhatsApp, Firebase, groups, calls, profiles, status and more.</p></div>
+          <div class="kpaiSuggestions">
+            <button class="kpaiSuggestion" type="button" onclick="if(typeof kpaiPrompt==='function') kpaiPrompt('How do I create a group?')">Create a group</button>
+            <button class="kpaiSuggestion" type="button" onclick="if(typeof kpaiPrompt==='function') kpaiPrompt('How do voice calls work?')">Voice calls</button>
+            <button class="kpaiSuggestion" type="button" onclick="if(typeof kpaiPrompt==='function') kpaiPrompt('How does my profile photo sync?')">Profile & DP</button>
+            <button class="kpaiSuggestion" type="button" onclick="if(typeof kpaiPrompt==='function') kpaiPrompt('How does Firebase work here?')">Firebase</button>
+          </div>
+          <div class="kpaiBody2" id="kpaiBody"></div>
+          <div class="kpaiTyping2" id="kpaiTyping">KPAI is thinking <span class="kpaiTypingDots"><i></i><i></i><i></i></span></div>
+          <div class="kpaiComposer"><div class="kpaiInputWrap"><input id="kpaiInput" autocomplete="off" placeholder="Message KPAI"></div><button class="kpaiSend" type="button" onclick="if(typeof sendKPAI==='function') sendKPAI()" aria-label="Send"><svg viewBox="0 0 24 24"><path d="m4 5 16 7-16 7 3-7zM7 12h13" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button></div>
+        </div>`;
+      const input=document.getElementById('kpaiInput');
+      if(input) input.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); if(typeof sendKPAI==='function') sendKPAI();}});
+      let saved=[];
+      try{ saved=JSON.parse(sessionStorage.getItem('kpai_ui_chat')||'[]'); }catch(err){ saved=[]; sessionStorage.removeItem('kpai_ui_chat'); }
+      if(saved.length) {
+        saved.forEach(m=>{ if(typeof kpaiAppend==='function') kpaiAppend(m.text,!!m.me); });
+      } else {
+        if(typeof kpaiAppend==='function') kpaiAppend('Hi! I\'m KPAI. What would you like to know?',false);
+      }
+      requestAnimationFrame(()=>{ try{ input?.focus(); }catch(e){} });
+    }catch(err){
+      console.error('kpaiOpenFixed error', err);
+      alert('KPAI error: ' + (err.message||err));
     }
-    pv.classList.add('show');
-    pi.innerHTML=`
-      <div class="kpaiShell">
-        <div class="kpaiTop">
-          <button class="kpaiBack" type="button" aria-label="Back" onclick="document.getElementById('pageView').classList.remove('show')">
-            <svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>
-          </button>
-          <div class="kpaiOrb2"></div>
-          <div class="kpaiHeadText"><b>KPAI</b><small><span class="kpaiOnlineDot"></span>AI assistant</small></div>
-          <button class="kpaiClear" type="button" onclick="clearKPAIChat()" aria-label="Clear chat">
-            <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v6M14 11v6"/></svg>
-          </button>
-        </div>
-        <div class="kpaiWelcome"><div class="kpaiWelcomeOrb"></div><h2>How can KPAI help?</h2><p>Ask KPAI anything about KP WhatsApp, Firebase, groups, calls, profiles, status and more.</p></div>
-        <div class="kpaiSuggestions">
-          <button class="kpaiSuggestion" type="button" onclick="kpaiPrompt('How do I create a group?')">Create a group</button>
-          <button class="kpaiSuggestion" type="button" onclick="kpaiPrompt('How do voice calls work?')">Voice calls</button>
-          <button class="kpaiSuggestion" type="button" onclick="kpaiPrompt('How does my profile photo sync?')">Profile &amp; DP</button>
-          <button class="kpaiSuggestion" type="button" onclick="kpaiPrompt('How does Firebase work here?')">Firebase</button>
-        </div>
-        <div class="kpaiBody2" id="kpaiBody"></div>
-        <div class="kpaiTyping2" id="kpaiTyping">KPAI is thinking <span class="kpaiTypingDots"><i></i><i></i><i></i></span></div>
-        <div class="kpaiComposer"><div class="kpaiInputWrap"><input id="kpaiInput" autocomplete="off" placeholder="Message KPAI"></div><button class="kpaiSend" type="button" onclick="sendKPAI()" aria-label="Send"><svg viewBox="0 0 24 24"><path d="m4 5 16 7-16 7 3-7zM7 12h13"/></svg></button></div>
-      </div>`;
-    const input=document.getElementById('kpaiInput');
-    if(input) input.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendKPAI();}});
-    const saved=JSON.parse(sessionStorage.getItem('kpai_ui_chat')||'[]');
-    if(saved.length) saved.forEach(m=>kpaiAppend(m.text,!!m.me));
-    else kpaiAppend('Hi! I’m KPAI. What would you like to know?',false);
-    requestAnimationFrame(()=>input?.focus());
   }
+  // Expose globally and overwrite any previous version
   window.openKPAI=kpaiOpenFixed;
+  window.kpaiOpenFixed=kpaiOpenFixed;
 
   function bindKpaiRows(){
-    document.querySelectorAll('.kpaiChatRow').forEach(row=>{
+    document.querySelectorAll('.kpaiChatRow, .kpaiNav').forEach(row=>{
       if(row.dataset.kpaiBound==='1') return;
       row.dataset.kpaiBound='1';
+      // remove inline onclick to avoid double call confusion, we will handle via listener
       row.addEventListener('click',function(e){
-        if(e.target.closest('button,a,input,select,textarea')) return;
-        e.preventDefault(); e.stopPropagation(); kpaiOpenFixed();
-      },true);
+        if(e.target.closest('button.kpaiSuggestion, .kpaiComposer button, .kpaiTop button')) return;
+        // allow if it's the row itself
+        e.preventDefault(); 
+        e.stopPropagation(); 
+        kpaiOpenFixed();
+      },false);
     });
   }
   function boot(){
@@ -2010,7 +2034,24 @@ async function sendKPAI(){
       list.dataset.kpaiObserver='1';
       new MutationObserver(bindKpaiRows).observe(list,{childList:true,subtree:true});
     }
+    const nav=document.querySelector('.nav');
+    if(nav && !nav.dataset.kpaiObserver){
+      nav.dataset.kpaiObserver='1';
+      new MutationObserver(bindKpaiRows).observe(nav,{childList:true,subtree:true});
+    }
+    // Also fix any existing inline onclick that might be broken due to earlier overwritten function
+    document.addEventListener('click', function(e){
+      const row = e.target.closest('.kpaiChatRow, .kpaiNav');
+      if(row){
+        // if already handled by bound listener, this is backup
+        if(!row.dataset.kpaiBound){
+          kpaiOpenFixed();
+        }
+      }
+    }, true);
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
-})();
-</script>
+  // also run boot after a short delay to catch late renderChats
+  setTimeout(boot, 500);
+  setTimeout(boot, 1500);
+})();</script>
