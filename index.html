@@ -283,6 +283,28 @@ button,.row,.iconBtn,.nav button,.attachOption,.primary,.secondary,.send{transit
 .messageVoiceLock{display:none}.callOverlay.show~*{}.incomingCallPage{position:fixed;inset:0;z-index:149;background:#030405;display:grid;place-items:center}.incomingCallPage .callCard{min-height:100dvh}
 
 </style>
+
+<style id="api-status-css">
+.kpaiApiStatusRow{display:flex;align-items:center;gap:10px;background:#0a0e0f;border:1px solid #1a2a2e;border-radius:10px;padding:10px 12px;margin:12px 0}
+.kpaiStatusDot{width:12px;height:12px;border-radius:50%;background:#333;box-shadow:0 0 0 0 rgba(0,0,0,0);transition:.3s;flex-shrink:0}
+.kpaiStatusDot.green{background:#22c55e;box-shadow:0 0 12px #22c55e, 0 0 0 4px rgba(34,197,94,.15);animation:statusPulseGreen 1.8s infinite}
+.kpaiStatusDot.red{background:#ef4444;box-shadow:0 0 12px #ef4444, 0 0 0 4px rgba(239,68,68,.15);animation:statusPulseRed 1.8s infinite}
+.kpaiStatusDot.yellow{background:#f59e0b;box-shadow:0 0 12px #f59e0b}
+@keyframes statusPulseGreen{50%{box-shadow:0 0 16px #22c55e, 0 0 0 6px rgba(34,197,94,.22)}}
+@keyframes statusPulseRed{50%{box-shadow:0 0 16px #ef4444, 0 0 0 6px rgba(239,68,68,.22)}}
+.kpaiStatusText{flex:1;font-size:12px;line-height:1.3}
+.kpaiStatusText b{font-size:13px;display:block}
+.kpaiStatusText small{color:#7a8d93}
+.kpaiTestBtn{padding:6px 12px;border-radius:8px;background:#101a1d;border:1px solid #1e3338;color:#8ae8ff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.kpaiTestBtn:hover{background:#132025}
+.kpaiHeaderStatus{width:8px;height:8px;border-radius:50%;display:inline-block;margin-left:6px;vertical-align:middle}
+.kpaiHeaderStatus.green{background:#22c55e;box-shadow:0 0 8px #22c55e}
+.kpaiHeaderStatus.red{background:#ef4444;box-shadow:0 0 8px #ef4444}
+.kpaiUnavailableBanner{display:none;background:linear-gradient(135deg, rgba(239,68,68,.12), rgba(239,68,68,.06));border:1px solid rgba(239,68,68,.22);color:#ff9a9a;border-radius:10px;padding:10px 12px;margin:8px 12px;font-size:12px;align-items:center;gap:8px}
+.kpaiUnavailableBanner.show{display:flex}
+.kpaiUnavailableBanner .icon{width:20px;height:20px;background:#ef4444;border-radius:50%;display:grid;place-items:center;color:white;font-weight:800;font-size:12px;flex-shrink:0}
+</style>
+
 </head>
 <body>
 <div class="authGate" id="authGate">
@@ -1869,6 +1891,790 @@ async function replyToStatus(){const x=kpCurrentStatus,input=document.getElement
 /* KPAI normal chat presentation */
 function openKPAI(){const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');pv.classList.add('show');pi.innerHTML='<div class="kpaiPage"><div class="kpaiHead"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="kpaiOrb"></div><div><h2 style="margin:0">KPAI</h2><div style="color:#69eaff;font-size:11px">KP AI Assistant · Online</div></div></div><div class="kpaiBody" id="kpaiBody"><div class="kpaiMsg"><b>KPAI</b><br>Hi! I’m KPAI. Ask me anything about KP WhatsApp, groups, calls, profiles, GIFs, status, or your KP projects.</div></div><div class="kpaiTyping" id="kpaiTyping">KPAI is typing…</div><div class="kpaiInput"><input id="kpaiInput" placeholder="Message KPAI" onkeydown="if(event.key===&quot;Enter&quot;)sendKPAI()"><button onclick="sendKPAI()">➤</button></div></div>';}
 </script>
+
+<style id="calling-upgrade-v2">
+/* ===== UPGRADED CALLING UI - Premium Voice Call ===== */
+.callOverlay{position:fixed;inset:0;z-index:9999;background:#020202;display:none;overflow:hidden}
+.callOverlay.show{display:flex;align-items:center;justify-content:center;animation:callOverlayIn .4s cubic-bezier(.2,.8,.2,1)}
+@keyframes callOverlayIn{from{opacity:0}to{opacity:1}}
+.callOverlay .callBgBlur{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 20%, #1a2f4a 0%, #0d1a2a 25%, #070a0f 55%, #020202 100%);filter:blur(0px);}
+.callOverlay .callBgBlur::after{content:"";position:absolute;inset:0;background:radial-gradient(600px 400px at 50% 40%, rgba(106,239,255,.12), transparent 70%);animation:bgPulse 3s ease-in-out infinite}
+@keyframes bgPulse{50%{opacity:1.5; transform:scale(1.1)}}
+
+.callCard.upgraded{width:100%;max-width:100%;min-height:100dvh;border:none;border-radius:0;background:transparent;box-shadow:none;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:0;position:relative;z-index:2}
+.callCard.upgraded::before{display:none}
+
+/* Top bar */
+.callTopBar{display:flex;align-items:center;gap:10px;padding:18px 20px 0;width:100%;max-width:420px;justify-content:center;color:#8aa0a8;font-size:13px;letter-spacing:.2px}
+.callTopBar .callStatusDot{width:8px;height:8px;border-radius:50%;background:#6aefff;box-shadow:0 0 12px #6aefff;animation:statusDot 1.8s infinite}
+@keyframes statusDot{50%{opacity:.4}}
+#callTimer{margin-left:auto;background:rgba(255,255,255,.08);padding:4px 10px;border-radius:20px;font-variant-numeric:tabular-nums;font-weight:600;color:#e6f3f6;font-size:12px}
+
+/* Avatar section - center */
+.callAvatarSection{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:18px;padding:20px}
+.callAvatarWrapper{position:relative;width:148px;height:148px;display:grid;place-items:center}
+.speakingRings{position:absolute;inset:0;pointer-events:none}
+.speakingRings .ring{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(106,239,255,.0);transform:scale(.85);opacity:0}
+.callAvatarWrapper.speaking .ring{border-color:rgba(106,239,255,.35);animation:speakingRing 1.8s cubic-bezier(.2,.8,.2,1) infinite}
+.callAvatarWrapper.speaking .ring.r2{animation-delay:.35s}
+.callAvatarWrapper.speaking .ring.r3{animation-delay:.7s}
+@keyframes speakingRing{0%{transform:scale(.85);opacity:.8}100%{transform:scale(1.45);opacity:0}}
+
+.callAvatar{width:118px!important;height:118px!important;border-radius:50%!important;margin:0!important;position:relative;z-index:3;background:linear-gradient(145deg,#1c2e3a,#0f1a22)!important;color:#e6f3f6!important;font-size:44px!important;font-weight:800!important;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 0 0 12px rgba(106,239,255,.06),0 18px 40px rgba(0,0,0,.6)!important;transition:transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s}
+.callAvatarWrapper.speaking .callAvatar{transform:scale(1.06);box-shadow:0 0 0 1px rgba(106,239,255,.3),0 0 0 18px rgba(106,239,255,.12),0 0 60px rgba(106,239,255,.25),0 20px 50px rgba(0,0,0,.7)!important}
+.callAvatar img{width:100%!important;height:100%!important;object-fit:cover!important}
+
+/* Voice waves under avatar - when remote speaking */
+.voiceWaves{display:flex;align-items:center;justify-content:center;gap:4px;height:26px;margin-top:4px;opacity:0;transform:translateY(6px);transition:.3s}
+.callAvatarWrapper.speaking .voiceWaves{opacity:1;transform:translateY(0)}
+.voiceWaves i{display:block;width:4px;height:8px;background:linear-gradient(180deg,#6aefff,#4a7bff);border-radius:10px;animation:waveBar .6s ease-in-out infinite}
+.voiceWaves i:nth-child(2){animation-delay:.1s}
+.voiceWaves i:nth-child(3){animation-delay:.2s}
+.voiceWaves i:nth-child(4){animation-delay:.3s}
+.voiceWaves i:nth-child(5){animation-delay:.15s}
+@keyframes waveBar{0%,100%{height:8px;opacity:.6}50%{height:22px;opacity:1}}
+
+.callTitle{font-size:26px!important;font-weight:800!important;color:#f2fbfe!important;letter-spacing:-.3px;margin:0!important;text-align:center}
+#callSub{font-size:14px;color:#8aa0a8;font-weight:500;letter-spacing:.2px}
+#callSub.speaking{color:#6aefff}
+#callPeer{font-size:12px;color:#5a6e75;margin-top:4px}
+
+/* Visualizer / local preview */
+.callVisualizer{width:100%;max-width:420px;padding:0 20px 10px;display:flex;justify-content:center}
+.localPreview{position:relative;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(16px);border-radius:18px;padding:10px 14px;min-width:170px;transition:.3s}
+.localPreview.speaking{background:rgba(106,239,255,.12);border-color:rgba(106,239,255,.28);box-shadow:0 0 20px rgba(106,239,255,.15)}
+.localAvatar{width:36px;height:36px;border-radius:50%;background:#1a2a32;display:grid;place-items:center;font-weight:700;color:#8ac8d6;font-size:13px}
+.localSpeakingDot{width:8px;height:8px;border-radius:50%;background:#4ade80;opacity:0;transform:scale(.5);transition:.25s;box-shadow:0 0 10px #4ade80}
+.localPreview.speaking .localSpeakingDot{opacity:1;transform:scale(1);animation:localDotPulse 1s infinite}
+@keyframes localDotPulse{50%{box-shadow:0 0 16px #4ade80}}
+.localBars{display:flex;align-items:center;gap:2px;height:18px;opacity:.5;transition:.3s}
+.localPreview.speaking .localBars{opacity:1}
+.localBars i{width:3px;height:6px;background:#8ae8ff;border-radius:6px;animation:waveBar .5s ease-in-out infinite}
+.localBars i:nth-child(2){animation-delay:.08s}
+.localBars i:nth-child(3){animation-delay:.16s}
+.localBars i:nth-child(4){animation-delay:.24s}
+.localBars i:nth-child(5){animation-delay:.12s}
+
+/* Actions - upgraded */
+.callActions.upgradedActions{display:flex;align-items:center;justify-content:center;gap:18px;padding:24px 20px 36px;width:100%;max-width:420px}
+.callAction{width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;display:grid;place-items:center;transition:.22s cubic-bezier(.2,.8,.2,1);position:relative}
+.callAction:active{transform:scale(.94)}
+.callAction svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8}
+.callAction.accept{background:linear-gradient(145deg,#6eff9a,#1f9a4a);color:#04210f;box-shadow:0 10px 24px rgba(46,255,120,.35)}
+.callAction.end{background:linear-gradient(145deg,#ff5a5a,#b91c1c);color:white;box-shadow:0 10px 24px rgba(255,60,60,.35);width:68px;height:68px}
+.callAction.mute{background:rgba(255,255,255,.09);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);color:#e8f3f6}
+.callAction.mute.muted{background:rgba(255,80,80,.18);border-color:rgba(255,80,80,.35);color:#ff9a9a}
+.callAction.speaker{background:rgba(255,255,255,.09);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);color:#e8f3f6}
+.callAction.speaker.active{background:rgba(106,239,255,.18);border-color:rgba(106,239,255,.35);color:#6aefff}
+
+/* Incoming animation */
+.callOverlay.incoming .callAvatarWrapper{animation:incomingBounce 1.2s cubic-bezier(.2,.8,.2,1) infinite}
+@keyframes incomingBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.callOverlay.incoming .speakingRings .ring{border-color:rgba(110,255,154,.35);animation-duration:1.2s}
+
+/* Responsive */
+@media(min-width:500px){
+  .callAvatarWrapper{width:168px;height:168px}
+  .callAvatar{width:132px!important;height:132px!important;font-size:50px!important}
+}
+</style>
+
+
+<script id="calling-upgrade-js">
+/* ===== UPGRADED CALLING WITH SPEAKING DETECTION ===== */
+let kpAudioCtx = null;
+let kpRemoteAnalyser = null;
+let kpLocalAnalyser = null;
+let kpSpeakingInterval = null;
+let kpRemoteSpeaking = false;
+let kpLocalSpeaking = false;
+
+function kpEnsureAudioCtx(){
+  if(!kpAudioCtx){
+    try{
+      kpAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }catch(e){ console.warn('AudioContext not supported', e); return null; }
+  }
+  if(kpAudioCtx.state==='suspended'){ kpAudioCtx.resume().catch(()=>{}); }
+  return kpAudioCtx;
+}
+
+function kpCreateAnalyser(stream){
+  const ctx = kpEnsureAudioCtx();
+  if(!ctx || !stream) return null;
+  try{
+    const source = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.6;
+    source.connect(analyser);
+    return analyser;
+  }catch(e){ console.warn('analyser create failed', e); return null; }
+}
+
+function kpGetVolume(analyser){
+  if(!analyser) return 0;
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(data);
+  let sum = 0;
+  // focus on voice frequencies (skip very low)
+  for(let i=4;i<data.length*0.6;i++) sum+=data[i];
+  return sum / (data.length*0.6);
+}
+
+function kpUpdateSpeakingUI(){
+  const remoteVol = kpGetVolume(kpRemoteAnalyser);
+  const localVol = kpGetVolume(kpLocalAnalyser);
+  const remoteThreshold = 12; // tweak
+  const localThreshold = 14;
+  
+  const isRemoteSpeaking = remoteVol > remoteThreshold;
+  const isLocalSpeaking = localVol > localThreshold;
+
+  // Remote avatar animation
+  const wrapper = document.getElementById('callAvatarWrapper');
+  const sub = document.getElementById('callSub');
+  const waves = document.getElementById('remoteWaves');
+  if(wrapper){
+    if(isRemoteSpeaking && !wrapper.classList.contains('speaking')){
+      wrapper.classList.add('speaking');
+      if(sub){ sub.textContent='Speaking...'; sub.classList.add('speaking'); }
+      // animate wave heights based on volume
+      if(waves){
+        const bars = waves.querySelectorAll('i');
+        bars.forEach(b=>{
+          const h = 8 + Math.min(18, remoteVol*0.6 + Math.random()*6);
+          b.style.height = h+'px';
+        });
+      }
+    } else if(!isRemoteSpeaking && wrapper.classList.contains('speaking')){
+      // small debounce to avoid flicker
+      setTimeout(()=>{
+        const volNow = kpGetVolume(kpRemoteAnalyser);
+        if(volNow < remoteThreshold){
+          wrapper.classList.remove('speaking');
+          if(sub && sub.textContent==='Speaking...'){ sub.textContent='Listening...'; sub.classList.remove('speaking'); }
+        }
+      }, 300);
+    }
+  }
+
+  // Local preview animation
+  const localPrev = document.getElementById('localPreview');
+  const localBars = document.getElementById('localBars');
+  if(localPrev){
+    if(isLocalSpeaking){
+      localPrev.classList.add('speaking');
+      if(localBars){
+        const bars = localBars.querySelectorAll('i');
+        bars.forEach(b=>{
+          const h = 6 + Math.min(14, localVol*0.5 + Math.random()*4);
+          b.style.height = h+'px';
+        });
+      }
+    } else {
+      // debounce
+      setTimeout(()=>{
+        if(kpGetVolume(kpLocalAnalyser) < localThreshold){
+          localPrev?.classList.remove('speaking');
+        }
+      }, 250);
+    }
+  }
+
+  // Update global flags
+  kpRemoteSpeaking = isRemoteSpeaking;
+  kpLocalSpeaking = isLocalSpeaking;
+}
+
+function kpStartSpeakingDetection(){
+  kpStopSpeakingDetection();
+  kpSpeakingInterval = setInterval(kpUpdateSpeakingUI, 110);
+}
+
+function kpStopSpeakingDetection(){
+  if(kpSpeakingInterval){ clearInterval(kpSpeakingInterval); kpSpeakingInterval=null; }
+  kpRemoteSpeaking=false; kpLocalSpeaking=false;
+  const w=document.getElementById('callAvatarWrapper');
+  if(w) w.classList.remove('speaking');
+  const lp=document.getElementById('localPreview');
+  if(lp) lp.classList.remove('speaking');
+}
+
+// Override showCallModal with upgraded UI
+const _oldShowCallModal = window.showCallModal;
+window.showCallModal = function(type, name, initial, photoURL){
+  const o=document.getElementById('callOverlay');
+  if(!o) return;
+  // Upgrade DOM if not already upgraded
+  if(!o.querySelector('.callAvatarWrapper')){
+    o.innerHTML = `
+      <div class="callBgBlur"></div>
+      <div class="callCard upgraded">
+        <div class="callTopBar">
+          <span class="callStatusDot"></span>
+          <span id="callSub">Connecting…</span>
+          <span id="callTimer"></span>
+        </div>
+        <div class="callAvatarSection">
+          <div class="callAvatarWrapper" id="callAvatarWrapper">
+            <div class="speakingRings">
+              <span class="ring r1"></span>
+              <span class="ring r2"></span>
+              <span class="ring r3"></span>
+            </div>
+            <div class="callAvatar" id="callAvatar">${(initial||'A').charAt(0).toUpperCase()}</div>
+            <div class="voiceWaves" id="remoteWaves"><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+          <div class="callTitle" id="callTitle">${name||'Voice call'}</div>
+          <div class="callPeer" id="callPeer"></div>
+        </div>
+        <div class="callVisualizer">
+          <div class="localPreview" id="localPreview">
+            <div class="localAvatar" id="localAvatar">You</div>
+            <div style="flex:1"><div style="font-size:12px;font-weight:600;color:#d0e6ec">You</div><div style="font-size:10px;color:#7a8d93" id="localStatus">Mic on</div></div>
+            <div class="localSpeakingDot" id="localSpeakingDot"></div>
+            <div class="voiceBars localBars" id="localBars"><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+        </div>
+        <div class="callActions upgradedActions" id="callActions"></div>
+      </div>
+    `;
+  }
+
+  // Update content
+  const av=document.getElementById('callAvatar');
+  const title=document.getElementById('callTitle');
+  const sub=document.getElementById('callSub');
+  const peerEl=document.getElementById('callPeer');
+  const localAv=document.getElementById('localAvatar');
+  
+  if(av){
+    if(photoURL){
+      av.innerHTML = `<img src="${photoURL}" alt="">`;
+    } else {
+      av.textContent = (initial||'A').charAt(0).toUpperCase();
+    }
+  }
+  if(title) title.textContent = name||'Voice call';
+  if(peerEl){
+    // keep peer id if available
+    const pid = (typeof peerId!=='undefined' && peerId) ? peerId : (window.KP_PEER_ID||'');
+    peerEl.textContent = pid ? 'Your ID: '+pid : '';
+  }
+  if(localAv){
+    try{
+      const myName = (typeof fbUserProfile!=='undefined' && fbUserProfile?.displayName) ? fbUserProfile.displayName.charAt(0).toUpperCase() : 'You';
+      localAv.textContent = myName;
+    }catch(e){}
+  }
+
+  const a=document.getElementById('callActions');
+  const timer=document.getElementById('callTimer');
+  if(timer) timer.textContent='';
+
+  // Different UI per type
+  if(type==='incoming'){
+    if(sub) sub.textContent='Incoming voice call…';
+    if(a) a.innerHTML = `
+      <button class="callAction mute" onclick="if(typeof toggleMute==='function') toggleMute()" id="muteCallBtn" title="Mute"><svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg></button>
+      <button class="callAction accept" onclick="acceptIncomingCall()" title="Answer"><svg viewBox="0 0 24 24"><path d="M6 4.5 9 4l2 4-2 2a13 13 0 0 0 5 5l2-2 4 2-.5 3a2 2 0 0 1-2.2 1.5C9.5 18.2 5.8 14.5 4.5 6.7A2 2 0 0 1 6 4.5Z"/></svg></button>
+      <button class="callAction end" onclick="rejectIncomingCall()" title="Reject"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    `;
+  } else if(type==='outgoing'){
+    if(sub) sub.textContent='Calling…';
+    if(a) a.innerHTML = `
+      <button class="callAction mute" onclick="if(typeof toggleMute==='function') toggleMute()" id="muteCallBtn" title="Mute"><svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg></button>
+      <button class="callAction end" onclick="endVoiceCall()" title="End call"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    `;
+  } else { // active
+    if(sub) sub.textContent='Connected • Encrypted';
+    if(a) a.innerHTML = `
+      <button class="callAction mute" id="muteCallBtn" onclick="if(typeof toggleMute==='function') toggleMute()" title="Mute"><svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg></button>
+      <button class="callAction speaker" id="speakerBtn" onclick="this.classList.toggle('active'); const aud=document.getElementById('remoteAudio'); if(aud){ aud.setSinkId && aud.setSinkId('').catch(()=>{}); } toast(this.classList.contains('active')?'Speaker on':'Speaker off')" title="Speaker"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15 9a4 4 0 0 1 0 6"/><path d="M19 7a7 7 0 0 1 0 10"/></svg></button>
+      <button class="callAction end" onclick="endVoiceCall()" title="End call"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    `;
+  }
+
+  o.classList.add('show');
+  o.classList.toggle('incoming', type==='incoming');
+  if(typeof previousPageBeforeCall!=='undefined'){
+    try{ previousPageBeforeCall = document.getElementById('pageView')?.classList.contains('show')?'page':'chat'; }catch(e){}
+  }
+  if(typeof callPageLocked!=='undefined') callPageLocked=true;
+};
+
+// Override hideCallModal
+const _oldHideCallModal = window.hideCallModal;
+window.hideCallModal = function(){
+  kpStopSpeakingDetection();
+  // cleanup analysers
+  kpRemoteAnalyser=null;
+  kpLocalAnalyser=null;
+  try{ if(kpAudioCtx && kpAudioCtx.state!=='closed'){ /* keep ctx for reuse */ } }catch(e){}
+  const o=document.getElementById('callOverlay');
+  if(o){ o.classList.remove('show'); o.classList.remove('incoming'); }
+  if(typeof callPageLocked!=='undefined') callPageLocked=false;
+  if(typeof _oldHideCallModal==='function' && _oldHideCallModal!==window.hideCallModal){
+    // avoid recursion
+  }
+};
+
+// Override bindCall to add analysers
+const _oldBindCall = window.bindCall;
+window.bindCall = function(call, name, initial){
+  // call original logic for stream handling but we wrap
+  call.on('stream', remoteStream=>{
+    const audio=document.getElementById('remoteAudio');
+    if(audio){ audio.srcObject=remoteStream; audio.play().catch(()=>{}); }
+    // create remote analyser
+    kpRemoteAnalyser = kpCreateAnalyser(remoteStream);
+    // show active UI
+    if(window.showCallModal) showCallModal('active', name, initial);
+    if(typeof startCallTimer==='function') startCallTimer();
+    kpStartSpeakingDetection();
+  });
+  call.on('close', ()=>{ 
+    kpStopSpeakingDetection();
+    if(typeof endVoiceCall==='function') endVoiceCall(false);
+  });
+  call.on('error', err=>{
+    console.warn('Call error', err);
+    kpStopSpeakingDetection();
+    if(typeof endVoiceCall==='function') endVoiceCall(false);
+    if(typeof toast==='function') toast('Voice call ended');
+  });
+  // Also if already has localStream, create analyser for it
+  if(typeof localStream!=='undefined' && localStream){
+    kpLocalAnalyser = kpCreateAnalyser(localStream);
+    kpStartSpeakingDetection();
+  }
+};
+
+// Override ensureLocalAudio to hook local analyser
+const _oldEnsureLocalAudio = window.ensureLocalAudio;
+window.ensureLocalAudio = function(){
+  const p = (_oldEnsureLocalAudio ? _oldEnsureLocalAudio() : navigator.mediaDevices.getUserMedia({audio:true,video:false}));
+  return p.then(stream=>{
+    kpLocalAnalyser = kpCreateAnalyser(stream);
+    kpStartSpeakingDetection();
+    return stream;
+  });
+};
+
+// Enhanced toggleMute with UI feedback
+const _oldToggleMute = window.toggleMute;
+window.toggleMute = function(){
+  if(typeof localStream==='undefined' || !localStream) return;
+  const track = localStream.getAudioTracks()[0];
+  if(!track) return;
+  track.enabled = !track.enabled;
+  const b=document.getElementById('muteCallBtn');
+  const localStatus=document.getElementById('localStatus');
+  const localPrev=document.getElementById('localPreview');
+  if(b){
+    b.classList.toggle('muted', !track.enabled);
+    b.innerHTML = track.enabled
+      ? '<svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg>'
+      : '<svg viewBox="0 0 24 24"><path d="m4 4 16 16M9 9v3a3 3 0 0 0 5.1 2.1M15 9V6a3 3 0 0 0-5.2-2M19 10v2a7 7 0 0 1-11.9 5M12 19v3M8 22h8"/></svg>';
+  }
+  if(localStatus) localStatus.textContent = track.enabled ? 'Mic on • Speaking detection active' : 'Mic muted';
+  if(localPrev){
+    if(!track.enabled) localPrev.classList.remove('speaking');
+  }
+  if(typeof toast==='function') toast(track.enabled?'Mic on':'Mic muted');
+};
+
+// Auto init
+console.log('Upgraded Calling UI loaded with speaking detection');
+</script>
+
+
+<style id="nav-fix-css">
+/* Ensure pageView show works even after inline display:none */
+.pageView{transition:opacity .25s}
+.pageView.show{display:block !important; opacity:1}
+.pageView:not(.show){opacity:0; pointer-events:none}
+#pageView{ /* override inline display none issues */ }
+.nav button.active{position:relative}
+.nav button.active::after{content:"";position:absolute;top:6px;right:10px;width:6px;height:6px;background:#6aefff;border-radius:50%;box-shadow:0 0 8px #6aefff}
+</style>
+
+<script id="nav-fix-js">
+// ===== FINAL NAVIGATION FIX - Unifies all nav / page logic =====
+(function(){
+  console.log('Applying FINAL NAV FIX');
+
+  // Ensure global state exists
+  if(typeof callPageLocked==='undefined') window.callPageLocked = false;
+  if(typeof previousPageBeforeCall==='undefined') window.previousPageBeforeCall = '';
+
+  // Robust closePage that always clears inline styles
+  function finalClosePage(){
+    const pv = document.getElementById('pageView');
+    if(pv){
+      pv.classList.remove('show');
+      pv.style.display = ''; // IMPORTANT: clear inline display:none that KPAI left
+      pv.style.opacity = '';
+    }
+    // If we were in a call, don't reset callPageLocked here - it's handled by call modal
+    // But if no active call, ensure it's false so navigation isn't blocked
+    try{
+      if((typeof activeCall==='undefined' || !activeCall) && (typeof incomingCall==='undefined' || !incomingCall)){
+        window.callPageLocked = false;
+      }
+    }catch(e){}
+    // Restore body scroll if needed
+  }
+  window.closePage = finalClosePage;
+  window.kpClosePage = finalClosePage;
+
+  // Robust openPageBase
+  function finalEnsurePageViewVisible(){
+    const pv = document.getElementById('pageView');
+    if(!pv) return null;
+    pv.style.display = ''; // clear any leftover display:none
+    pv.style.opacity = '';
+    pv.classList.add('show');
+    // Ensure inner scrolls to top
+    const pi = document.getElementById('pageInner');
+    if(pi) pi.scrollTop = 0;
+    return pv;
+  }
+
+  // Override openProfilePage to use finalEnsurePageViewVisible
+  const _origOpenProfilePage = window.openProfilePage;
+  window.openProfilePage = function(){
+    if(window.callPageLocked){ if(typeof toast==='function') toast('End the call first'); return; }
+    const pv = finalEnsurePageViewVisible();
+    const pi = document.getElementById('pageInner');
+    if(!pv||!pi) return;
+    // Try original if exists and it renders, else fallback to our own render
+    if(_origOpenProfilePage && _origOpenProfilePage!==window.openProfilePage){
+      // Call original but ensure it also shows
+      try{
+        const p = (typeof fbUserProfile!=='undefined' && fbUserProfile) ? fbUserProfile : {};
+        pi.innerHTML = `
+          <div class="pageHeader"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button><div><h2>Profile</h2><div style="color:#777;font-size:12px">Your KP WhatsApp profile</div></div></div>
+          <div class="pageCard profileHero"><div class="profileAvatarBig">${p.photoURL?`<img src="${p.photoURL}">`:((p.displayName||p.username||'U')[0].toUpperCase())}</div><h2>${(p.displayName||'KP User')}</h2><div class="profileUsernameBadge">@${p.username||''}</div><div style="color:#888;margin-top:8px">${p.bio||'No bio yet'}</div></div>
+          <div class="pageCard profileActions"><button class="primary" onclick="if(typeof openProfileEdit==='function') openProfileEdit(); else toast('Edit profile')">Edit profile</button><button class="secondary" onclick="openPage('settings')">Settings</button></div>
+          <div class="pageCard"><b>Account</b><div style="color:#777;margin-top:8px">Username login enabled</div><div style="color:#777;margin-top:4px">Phone numbers are not used.</div></div>
+        `;
+        return;
+      }catch(e){ console.warn('openProfilePage fallback', e); }
+    }
+    // fallback already rendered
+  };
+
+  // Override openCallsPage similarly
+  const _origOpenCallsPage = window.openCallsPage;
+  window.openCallsPage = function(){
+    if(window.callPageLocked){ if(typeof toast==='function') toast('End the call first'); return; }
+    finalEnsurePageViewVisible();
+    if(_origOpenCallsPage && _origOpenCallsPage!==window.openCallsPage){
+      try{ return _origOpenCallsPage(); }catch(e){ console.warn(e); }
+    }
+    // fallback simple
+    const pi=document.getElementById('pageInner');
+    if(pi) pi.innerHTML = `<div class="pageHeader"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div><h2>Calls</h2><div style="color:#777;font-size:12px">Voice calls</div></div></div><div class="pageCard">No calls yet</div>`;
+  };
+
+  // Override openStatusPage
+  const _origOpenStatusPage = window.openStatusPage;
+  window.openStatusPage = function(){
+    if(window.callPageLocked){ if(typeof toast==='function') toast('End the call first'); return; }
+    finalEnsurePageViewVisible();
+    if(_origOpenStatusPage && _origOpenStatusPage!==window.openStatusPage){
+      try{ return _origOpenStatusPage(); }catch(e){ console.warn(e); }
+    }
+  };
+
+  // Override openPage central router
+  const _origOpenPage = window.openPage;
+  window.openPage = function(type, extra=null){
+    if(window.callPageLocked && type!=='call'){
+      if(typeof toast==='function') toast('End the call first');
+      return;
+    }
+    const pv = finalEnsurePageViewVisible();
+    if(!pv) return;
+    // Route
+    if(type==='profile') return window.openProfilePage();
+    if(type==='calls') return window.openCallsPage();
+    if(type==='status'){
+      if(typeof openStatusPage==='function') return openStatusPage();
+    }
+    if(type==='settings'){
+      const pi=document.getElementById('pageInner');
+      if(pi){
+        pi.innerHTML = `
+          <div class="pageHeader"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button><div><h2>Settings</h2><div style="color:#777;font-size:12px">KP WhatsApp</div></div></div>
+          <div class="pageCard pageList" onclick="openProfilePage()"><div class="pageIcon">◎</div><div><b>Profile</b><div style="color:#777;font-size:12px">Photo, name, username and bio</div></div></div>
+          <div class="pageCard pageList" onclick="if(typeof openKPAISettings==='function') openKPAISettings(); else if(window.openKPAI) openKPAI(); else toast('KPAI settings')"><div class="pageIcon">🤖</div><div><b>KPAI Agent</b><div style="color:#777;font-size:12px">API key, mode, image generation</div></div></div>
+          <div class="pageCard pageList" onclick="toast('Privacy settings coming soon')"><div class="pageIcon">⌾</div><div><b>Privacy</b><div style="color:#777;font-size:12px">Last seen, profile and read receipts</div></div></div>
+          <div class="pageCard pageList" onclick="toast('Notifications')"><div class="pageIcon">♢</div><div><b>Notifications</b><div style="color:#777;font-size:12px">Messages and calls</div></div></div>
+          <div class="pageCard"><b>About</b><div style="color:#777;margin-top:6px">KP WhatsApp - Upgraded build with speaking animation & full navigation fix</div></div>
+        `;
+      }
+      return;
+    }
+    // Fallback to original for other types (groupInfo etc)
+    if(_origOpenPage && _origOpenPage!==window.openPage){
+      try{ return _origOpenPage(type, extra); }catch(e){ console.warn('openPage fallback error', e); }
+    }
+  };
+
+  // Final unified nav - this is the ONLY nav that should run
+  window.nav = function(btn, type){
+    try{
+      if(window.callPageLocked){
+        if(typeof toast==='function') toast('End the call before leaving');
+        return;
+      }
+      // Update active state
+      document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+      if(btn) btn.classList.add('active');
+
+      if(type==='chats'){
+        finalClosePage();
+        if(typeof closeChat==='function') closeChat();
+        return;
+      }
+      if(type==='calls'){
+        return window.openCallsPage();
+      }
+      if(type==='profile'){
+        return window.openProfilePage();
+      }
+      if(type==='status'){
+        return window.openPage('status');
+      }
+      // If KPAI nav (custom)
+      if(type==='kpai' || (btn && btn.classList.contains('kpaiNav'))){
+        if(window.openKPAI) return window.openKPAI();
+      }
+    }catch(e){ console.error('nav error', e); }
+  };
+
+  // Fix KPAI back button to use closePage properly - override kpaiOpenFixed again to ensure back calls closePage
+  if(window.kpaiOpenFixed){
+    const _origKpaiOpenFixed = window.kpaiOpenFixed;
+    window.kpaiOpenFixed = function(){
+      try{
+        _origKpaiOpenFixed();
+        // After rendering, fix back button onclick to use closePage
+        setTimeout(()=>{
+          const backBtn = document.querySelector('#pageInner .kpaiBack');
+          if(backBtn){
+            backBtn.onclick = function(){ finalClosePage(); };
+          }
+        }, 100);
+      }catch(e){ console.error('kpaiOpenFixed wrapper', e); if(_origKpaiOpenFixed) _origKpaiOpenFixed(); }
+    };
+    window.openKPAI = window.kpaiOpenFixed;
+  }
+
+  // Ensure closeChat also clears pageView display issues
+  const _origCloseChat = window.closeChat;
+  window.closeChat = function(){
+    try{
+      if(_origCloseChat && _origCloseChat!==window.closeChat){
+        // Call original logic but not its pageView handling
+        const app = document.getElementById('app');
+        if(app) app.classList.remove('chat-open');
+        const ov = document.getElementById('chatLoadingOverlay');
+        if(ov) ov.classList.remove('show');
+        if(typeof current!=='undefined' && current){
+          current.unread=0;
+          if(typeof renderChats==='function') renderChats();
+          if(typeof markChatRead==='function') markChatRead(current).catch(()=>{});
+        }
+      } else {
+        const app=document.getElementById('app'); if(app) app.classList.remove('chat-open');
+      }
+    }catch(e){ console.warn(e); }
+  };
+
+  // Fix all elements with onclick="closePage()" that might have been set to inline display:none before - ensure they now call finalClosePage
+  document.addEventListener('click', function(e){
+    const target = e.target.closest('[onclick*="pageView"][onclick*="classList.remove"]');
+    if(target){
+      // If someone clicks old style back button that does direct classList.remove, intercept
+      const pv = document.getElementById('pageView');
+      if(pv && pv.style.display==='none'){
+        pv.style.display='';
+      }
+    }
+  }, true);
+
+  // Reset callPageLocked on page load
+  window.callPageLocked = false;
+
+  console.log('FINAL NAV FIX applied - profile, settings, calls, status should now work after KPAI');
+})();
+</script>
+
+
+<script id="api-status-js">
+// ===== API GREEN/RED STATUS INDICATOR =====
+async function checkKPAIApiStatus(showToast=true){
+  const dot = document.getElementById('kpaiStatusDot');
+  const text = document.getElementById('kpaiStatusText');
+  const headerDot = document.getElementById('kpaiHeaderStatusDot');
+  const banner = document.getElementById('kpaiUnavailableBanner');
+  
+  const apiKey = (localStorage.getItem('kpai_api_key')||'').trim();
+  const mode = localStorage.getItem('kpai_agent_mode')||'full';
+  const imgModel = localStorage.getItem('kpai_image_model')||'pollinations';
+  
+  function setStatus(state, title, sub){
+    if(!dot || !text) return;
+    dot.className = 'kpaiStatusDot '+state;
+    if(state==='green'){
+      text.innerHTML = `<b style="color:#4ade80">${title}</b><small>${sub}</small>`;
+    } else if(state==='red'){
+      text.innerHTML = `<b style="color:#ff7a7a">${title}</b><small>${sub}</small>`;
+    } else {
+      text.innerHTML = `<b style="color:#fbbf24">${title}</b><small>${sub}</small>`;
+    }
+    if(headerDot){
+      headerDot.className = 'kpaiHeaderStatus '+state;
+      headerDot.title = title + ' - ' + sub;
+    }
+    // Show/hide unavailable banner in main chat
+    if(banner){
+      if(state==='red'){
+        banner.classList.add('show');
+        banner.querySelector('.msg').textContent = sub;
+      } else {
+        banner.classList.remove('show');
+      }
+    }
+    // Update composer placeholder
+    const input = document.getElementById('kpaiInput');
+    if(input){
+      if(state==='red'){
+        input.placeholder = 'API ലഭ്യമല്ല - Settings-ൽ Key add ചെയ്യുക...';
+      } else if(state==='green' && imgModel==='pollinations'){
+        input.placeholder = 'Message KPAI (Free mode - Green ✅) or /image prompt';
+      } else {
+        input.placeholder = 'Message KPAI (API Green ✅)';
+      }
+    }
+  }
+
+  // Pollinations free mode is always green
+  if(imgModel==='pollinations'){
+    setStatus('green', 'API പൂർണമായും വർക്ക് ചെയ്യുന്നു ✅', 'Free mode (Pollinations) - Key വേണ്ട, Image + Chat ready');
+    if(showToast && typeof toast==='function') toast('API Green - Free mode working ✅');
+    return true;
+  }
+
+  // If no key
+  if(!apiKey){
+    setStatus('red', 'API ലഭ്യമല്ല 🔴', 'Gemini Key ഇല്ല - Settings-ൽ API Key paste ചെയ്യുക അല്ലെങ്കിൽ Free mode select ചെയ്യുക');
+    if(showToast && typeof toast==='function') toast('API Red - Key ഇല്ല');
+    return false;
+  }
+
+  // Test Gemini key with a tiny request
+  setStatus('yellow', 'API പരിശോധിക്കുന്നു...', 'Gemini Key test ചെയ്യുന്നു...');
+  try{
+    const testUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+    const resp = await fetch(testUrl);
+    const data = await resp.json().catch(()=>({}));
+    if(resp.ok && data.models){
+      setStatus('green', 'API പൂർണമായും വർക്ക് ചെയ്യുന്നു ✅', `Gemini Key valid - ${data.models.length} models available - Mode: ${mode}`);
+      if(showToast && typeof toast==='function') toast('API Green - Key valid ✅');
+      // Save valid flag
+      localStorage.setItem('kpai_api_valid', '1');
+      return true;
+    } else {
+      const errMsg = data.error?.message || `HTTP ${resp.status}`;
+      setStatus('red', 'API Key തെറ്റ് / ലഭ്യമല്ല 🔴', errMsg + ' - Key ശരിയാണോ എന്ന് നോക്ക്');
+      if(showToast && typeof toast==='function') toast('API Red - '+errMsg);
+      localStorage.setItem('kpai_api_valid', '0');
+      return false;
+    }
+  }catch(err){
+    console.error('API check failed', err);
+    setStatus('red', 'API പരിശോധിക്കാൻ കഴിഞ്ഞില്ല 🔴', (err.message||'Network error') + ' - Internet നോക്കുക അല്ലെങ്കിൽ Free mode ഉപയോഗിക്കുക');
+    if(showToast && typeof toast==='function') toast('API Red - Network error');
+    return false;
+  }
+}
+window.checkKPAIApiStatus = checkKPAIApiStatus;
+
+// Auto check on KPAI open
+const _origKpaiOpenFixedForStatus = window.kpaiOpenFixed;
+window.kpaiOpenFixed = function(){
+  if(_origKpaiOpenFixedForStatus) _origKpaiOpenFixedForStatus();
+  // After UI rendered, check status and inject header dot and banner
+  setTimeout(()=>{
+    // Inject header status dot if not exists
+    const headText = document.querySelector('.kpaiHeadText small');
+    if(headText && !document.getElementById('kpaiHeaderStatusDot')){
+      headText.innerHTML += ' <span class="kpaiHeaderStatus red" id="kpaiHeaderStatusDot" title="Checking..."></span>';
+    }
+    // Inject unavailable banner into composer area if not exists
+    const shell = document.querySelector('.kpaiShell');
+    const composer = document.querySelector('.kpaiComposer');
+    if(shell && composer && !document.getElementById('kpaiUnavailableBanner')){
+      const banner = document.createElement('div');
+      banner.className = 'kpaiUnavailableBanner';
+      banner.id = 'kpaiUnavailableBanner';
+      banner.innerHTML = `<div class="icon">!</div><div style="flex:1"><b style="color:#ff9a9a">API ലഭ്യമല്ല</b><div class="msg" style="font-size:11px;color:#c99">Settings-ൽ API Key add ചെയ്യുക അല്ലെങ്കിൽ Free mode select ചെയ്യുക</div></div><button class="kpaiTestBtn" onclick="openKPAISettings()">Settings</button>`;
+      shell.insertBefore(banner, composer);
+    }
+    // Run check
+    checkKPAIApiStatus(false);
+  }, 300);
+};
+window.openKPAI = window.kpaiOpenFixed;
+
+// Intercept sendKPAI to show unavailable message if red
+const _origSendKPAIForStatus = window.sendKPAI;
+window.sendKPAI = async function(){
+  const apiKey = (localStorage.getItem('kpai_api_key')||'').trim();
+  const imgModel = localStorage.getItem('kpai_image_model')||'pollinations';
+  const isValid = localStorage.getItem('kpai_api_valid');
+  
+  // If red status and not free mode, show warning before sending
+  if(!apiKey && imgModel!=='pollinations'){
+    // Show red banner and message
+    const banner = document.getElementById('kpaiUnavailableBanner');
+    if(banner) banner.classList.add('show');
+    
+    // Add system message to chat
+    const body = document.getElementById('kpaiBody');
+    const input = document.getElementById('kpaiInput');
+    const t = input?.value.trim()||'';
+    if(t && body){
+      // Let original send handle it, but it will fallback to local
+      // Add extra warning
+      if(typeof kpaiAppend==='function'){
+        kpaiAppend('⚠️ API ലഭ്യമല്ല (Red) - Free mode-ൽ ആണ് reply തരുന്നത്. Full AI വേണമെങ്കിൽ Settings-ൽ Gemini Key add ചെയ്യുക അല്ലെങ്കിൽ Pollinations (Free) select ചെയ്യുക.', false);
+      }
+    }
+  }
+  
+  // Call original
+  if(_origSendKPAIForStatus) return _origSendKPAIForStatus();
+};
+
+// Also enhance saveKPAISettings to auto check after save
+const _origSaveSettings = window.saveKPAISettings;
+window.saveKPAISettings = async function(){
+  if(_origSaveSettings) await _origSaveSettings();
+  setTimeout(()=>{ checkKPAIApiStatus(true); }, 500);
+};
+
+// On page load, check status in background
+document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(()=>checkKPAIApiStatus(false), 1500); });
+
+console.log('API Status Green/Red indicator loaded');
+</script>
+
 </body>
 </html><style>
 /* KPAI UI refresh — frontend only. No API key is stored here. */
@@ -2072,7 +2878,12 @@ async function sendKPAI(){
                 <option value="pollinations">Pollinations (Free, no key)</option>
                 <option value="gemini">Gemini 2.0 Flash Image (needs key)</option>
               </select>
-              <div style="font-size:10px;color:#6d7a7e;margin-top:8px;line-height:1.4">Key is stored only in your browser localStorage & in your Firestore user doc. Never share it. You can get free key from aistudio.google.com</div>
+              <div class="kpaiApiStatusRow" id="kpaiApiStatusRow">
+                <div class="kpaiStatusDot red" id="kpaiStatusDot"></div>
+                <div class="kpaiStatusText" id="kpaiStatusText"><b style="color:#ff7a7a">API ലഭ്യമല്ല</b><small>Key add ചെയ്തിട്ടില്ല അല്ലെങ്കിൽ free mode അല്ല</small></div>
+                <button class="kpaiTestBtn" type="button" onclick="if(typeof checkKPAIApiStatus==='function') checkKPAIApiStatus(true)">Test</button>
+              </div>
+              <div style="font-size:10px;color:#6d7a7e;margin-top:8px;line-height:1.4">Key is stored only in your browser localStorage. Get free key from aistudio.google.com • Pollinations mode-ൽ key വേണ്ട, അത് എപ്പോഴും <span style="color:#22c55e">പച്ച</span> ആയിരിക്കും.</div>
               <div class="rowBtns">
                 <button class="cancelBtn" type="button" onclick="document.getElementById('kpaiSettingsPanel').classList.remove('show')">Cancel</button>
                 <button class="saveBtn" type="button" onclick="if(typeof saveKPAISettings==='function') saveKPAISettings()">Save</button>
