@@ -1363,6 +1363,208 @@ if(typeof fbAuth!=='undefined'&&fbAuth){
 }
 setTimeout(removeLegacyAuthNodes,250);
 
+
+/* =========================================================
+   FINAL UI / PROFILE / GROUP PATCH
+   ========================================================= */
+(function(){
+  const style=document.createElement('style');
+  style.textContent=`
+    .newChatActions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 16px}
+    .newChatAction{min-height:52px;border:1px solid #282828;border-radius:16px;background:#101010;color:#fff;display:flex;align-items:center;justify-content:center;gap:9px;font-weight:800;cursor:pointer}
+    .newChatAction.primaryAction{background:linear-gradient(145deg,#b8ff22,#6fa900);color:#071000;border-color:#b8ff22}
+    .newChatAction svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .newChatUsers .userRow{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;gap:11px;padding:13px;border-bottom:1px solid #181818}
+    .newChatUsers .userRow:last-child{border-bottom:0}
+    .newChatUsers .userAvatar{width:48px;height:48px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:linear-gradient(145deg,#b8ff22,#3e7c00);color:#071000;font-weight:900;flex:none}
+    .newChatUsers .userAvatar img{width:100%;height:100%;object-fit:cover;display:block}
+    .newChatUsers .userMeta{min-width:0}.newChatUsers .userMeta b,.newChatUsers .userMeta small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .groupMemberPick{display:grid;grid-template-columns:30px 46px minmax(0,1fr) 28px;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid #191919;cursor:pointer}
+    .groupMemberPick input{display:none}
+    .groupTick{width:24px;height:24px;border:1px solid #444;border-radius:50%;display:grid;place-items:center;color:transparent;transition:.18s}
+    .groupMemberPick.selected .groupTick{background:#b8ff22;border-color:#b8ff22;color:#071000}
+    .groupPickAvatar{width:46px;height:46px;border-radius:50%;overflow:hidden;background:#1b1b1b;display:grid;place-items:center;color:#b8ff22;font-weight:800}
+    .groupPickAvatar img{width:100%;height:100%;object-fit:cover}
+    .groupCreateFooter{position:sticky;bottom:0;padding:12px 0 4px;background:linear-gradient(transparent,#070707 18%)}
+    .groupDetailAvatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+    .groupDetailHero .groupDetailAvatar{width:100px;height:100px;border-radius:50%;overflow:hidden;margin:0 auto 12px;background:#171717}
+    .chatHead .avatar img{object-fit:cover!important;object-position:center!important}
+    .chatRow .avatar{overflow:hidden;flex:none}
+    .chatRow .avatar img{width:100%!important;height:100%!important;display:block!important;object-fit:cover!important;object-position:center!important;border-radius:50%!important}
+  `;
+  document.head.appendChild(style);
+})();
+
+let fbUnsubOtherProfile=null;
+async function syncOpenChatProfile(c){
+  if(fbUnsubOtherProfile){try{fbUnsubOtherProfile()}catch(e){}fbUnsubOtherProfile=null}
+  if(!fbUser||!c||c.group||!c.otherUid||!fbDb)return;
+  try{
+    const ref=fbDb.collection('users').doc(c.otherUid);
+    const snap=await ref.get();
+    if(snap.exists){
+      const u=snap.data()||{};
+      Object.assign(c,{name:u.displayName||u.firstName||u.username||c.name,username:u.username||c.username||'',photoURL:u.photoURL||'',initial:((u.displayName||u.firstName||u.username||'U')[0]||'U').toUpperCase(),peerId:u.peerId||c.peerId||''});
+      renderChats();updateHeadAvatar();renderMessages();
+    }
+    fbUnsubOtherProfile=ref.onSnapshot(ds=>{
+      if(!ds.exists)return;
+      const u=ds.data()||{};
+      Object.assign(c,{name:u.displayName||u.firstName||u.username||c.name,username:u.username||'',photoURL:u.photoURL||'',initial:((u.displayName||u.firstName||u.username||'U')[0]||'U').toUpperCase(),peerId:u.peerId||c.peerId||''});
+      renderChats();
+      if(current===c){updateHeadAvatar();renderMessages();}
+    });
+  }catch(e){console.warn('profile sync',e)}
+}
+
+function updateHeadAvatar(){
+  const ha=document.getElementById('headAvatar');if(!ha||!current)return;
+  const src=current.photoURL||current.avatar||'';
+  ha.innerHTML=src?`<img src="${escapeHtml(src)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:escapeHtml(current.initial||'U');
+  if(!current.group&&current.online)ha.insertAdjacentHTML('beforeend','<span class="dot"></span>');
+}
+
+function renderChats(){
+  const list=document.getElementById('chatList');if(!list)return;
+  const q=(document.getElementById('search')?.value||'').toLowerCase().trim();
+  const arr=chats.filter(c=>(activeTab==='all'||(activeTab==='unread'&&c.unread)||(activeTab==='groups'&&c.group))&&((c.name||'').toLowerCase().includes(q)||(c.username||'').toLowerCase().includes(q)));
+  arr.sort((a,b)=>(b.sortTime||0)-(a.sortTime||0));
+  list.innerHTML=arr.map(c=>{
+    const src=c.group?c.avatar:c.photoURL;
+    const av=src?`<img src="${escapeHtml(src)}" alt="" onerror="this.remove()">`:escapeHtml(c.initial||'U');
+    const badge=c.unread?`<span class="unread">${c.unread}</span>`:'';
+    const groupCount=c.group&&c.messageCount?`<span class="unread">${c.messageCount}</span>`:'';
+    return `<div class="chatRow ${current?.id===c.id?'selected':''}" data-chat-id="${escapeHtml(String(c.id))}" onclick="openChat('${String(c.id).replace(/'/g,"\\'")}')"><div class="avatar green">${av}</div><div class="chatMeta"><div class="chatName"><b>${escapeHtml(c.name||'User')}</b>${c.username&&!c.group?`<small>@${escapeHtml(c.username)}</small>`:''}</div><div class="chatPreview">${escapeHtml(c.preview||'No messages yet')}</div></div><div class="chatSide"><small>${escapeHtml(c.time||'')}</small>${badge}${groupCount}</div></div>`;
+  }).join('')||'<div class="empty">No chats yet.<br>Tap + to start a new chat.</div>';
+}
+
+async function openChat(id){
+  const c=chats.find(x=>String(x.id)===String(id));if(!c)return;
+  current=c;c.unread=0;renderChats();document.getElementById('app').classList.add('chat-open');
+  try{
+    if(c.group){await loadFirebaseMessages(c);startFirebaseMessageListener(c);await markChatRead(c);renderMessages();return;}
+    await syncOpenChatProfile(c);
+    if(!c.firestoreId&&c.otherUid)c.firestoreId=await ensurePrivateChat(c.otherUid,c.name,c.peerId||'');
+    await loadFirebaseMessages(c);startFirebaseMessageListener(c);await markChatRead(c);renderMessages();
+  }catch(e){console.error('openChat',e);toast('Could not open this chat: '+(e.code||e.message||'Firestore error'))}
+}
+
+async function startChatWithUser(uid){
+  if(!fbUser||uid===fbUser.uid)return;
+  try{
+    let u=realUsers.find(x=>x.uid===uid);
+    if(!u){const us=await fbDb.collection('users').doc(uid).get();if(!us.exists)throw new Error('User not found');u={...us.data(),uid}}
+    const chatId=await ensurePrivateChat(uid,u.displayName||u.username||'User',u.peerId||'');
+    let c=chats.find(x=>x.firestoreId===chatId||x.id===chatId);
+    const display=u.displayName||u.firstName||u.username||'User';
+    if(!c){c={id:chatId,firestoreId:chatId,name:display,username:u.username||'',initial:(display[0]||'U').toUpperCase(),preview:'No messages yet',time:'',sortTime:Date.now(),online:false,unread:0,color:'green',group:false,messages:[],peerId:u.peerId||'',recipientPeerId:u.peerId||'',otherUid:uid,photoURL:u.photoURL||'',startedAt:'Today'};chats.unshift(c)}
+    else Object.assign(c,{name:display,username:u.username||'',initial:(display[0]||'U').toUpperCase(),peerId:u.peerId||'',recipientPeerId:u.peerId||'',otherUid:uid,photoURL:u.photoURL||''});
+    closePage();renderChats();await openChat(c.id);
+  }catch(e){console.error(e);toast('Could not open this chat: '+(e.code||e.message||'Firestore error'))}
+}
+
+async function ensurePrivateChat(otherUid,otherName='',otherPeerId=''){
+  if(!fbUser||!otherUid||otherUid===fbUser.uid)throw new Error('Invalid chat user');
+  const ids=[fbUser.uid,otherUid].sort(),chatId=ids.join('_'),ref=fbDb.collection('chats').doc(chatId),snap=await ref.get();
+  if(!snap.exists){
+    const unread={};ids.forEach(id=>unread[id]=0);
+    const peerIds={};peerIds[fbUser.uid]=window.peerId||'';peerIds[otherUid]=otherPeerId||'';
+    await ref.set({type:'private',memberIds:ids,createdAt:KPServerTS(),lastMessage:'',lastMessageAt:KPServerTS(),lastMessageSenderId:'',unreadCount:unread,peerIds});
+  }
+  return chatId;
+}
+
+/* New Chat: Search username/name + Create Group beside it. */
+async function openRealUsers(){
+  if(!fbUser){toast('Please sign in first');return}
+  const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');
+  pi.innerHTML=`<div class="newChatPage">
+    <div class="newChatTop"><button class="pageBack" onclick="closePage()" aria-label="Back"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="newChatTitle"><b>Start a New Chat</b><span>Find a real KP WhatsApp user</span></div></div>
+    <div class="newChatActions"><button class="newChatAction primaryAction" onclick="focusUserSearch()"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg>New chat</button><button class="newChatAction" onclick="openGroupCreator()"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3 20a6 6 0 0 1 12 0M14 17a5 5 0 0 1 7 3"/></svg>Create group</button></div>
+    <div class="newChatSearch"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input class="field" id="userSearch" placeholder="Search username or name" oninput="filterRealUsers()"></div>
+    <div class="usernameHint">The list is shuffled so account-creation order does not decide who appears first.</div>
+    <div class="newChatUsers" id="realUserList"><div style="padding:18px;color:#777">Loading users…</div></div>
+  </div>`;
+  pv.classList.add('show');await loadRealUsers();
+}
+function focusUserSearch(){document.getElementById('userSearch')?.focus()}
+
+async function openGroupCreator(){
+  groupAvatarUrl='';groupDraft={name:'',about:'',type:'private',avatar:''};
+  const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');
+  pi.innerHTML=`<div class="newChatPage"><div class="newChatTop"><button class="pageBack" onclick="openRealUsers()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="newChatTitle"><b>Create group</b><span>Choose a profile, name and members</span></div></div>
+  <div class="pageCard groupWizard"><div style="text-align:center"><div id="groupAvatarPreviewWrap" class="groupDetailAvatar" style="margin:0 auto 10px;width:100px;height:100px;border-radius:50%;overflow:hidden;background:#171717;display:grid;place-items:center;color:#b8ff22;font-size:30px;font-weight:900">G</div><div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap"><label class="secondary uploadBtn">Photo<input id="groupPhotoInput2" type="file" accept="image/*" hidden onchange="previewGroupPhoto2(this.files[0])"></label><button class="secondary" onclick="openGifPicker(true)">GIF</button></div></div>
+  <input class="field" id="groupName2" placeholder="Group name" maxlength="60"><textarea class="callNote" id="groupAbout2" placeholder="Description / purpose" maxlength="160"></textarea>
+  <div class="groupType"><button class="active" id="privateType2" onclick="setGroupType2('private')">Private</button><button id="publicType2" onclick="setGroupType2('public')">Public</button></div>
+  <button class="primary" onclick="openGroupMembersPage()">Add members</button></div></div>`;
+  pv.classList.add('show');
+}
+function setGroupType2(t){groupDraft.type=t;document.getElementById('privateType2')?.classList.toggle('active',t==='private');document.getElementById('publicType2')?.classList.toggle('active',t==='public')}
+function previewGroupPhoto2(file){if(!file)return;const r=new FileReader();r.onload=()=>{groupAvatarUrl=r.result;groupDraft.avatar=r.result;const w=document.getElementById('groupAvatarPreviewWrap');if(w)w.innerHTML=`<img src="${escapeHtml(r.result)}" style="width:100%;height:100%;object-fit:cover">`};r.readAsDataURL(file)}
+async function openGroupMembersPage(){
+  const name=document.getElementById('groupName2')?.value.trim();if(!name){toast('Enter a group name');return}
+  groupDraft={name,about:document.getElementById('groupAbout2')?.value.trim()||'',type:groupDraft.type||'private',avatar:groupAvatarUrl||''};selectedGroupMembers=[];
+  await loadRealUsers();
+  const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');
+  pi.innerHTML=`<div class="newChatPage"><div class="newChatTop"><button class="pageBack" onclick="openGroupCreator()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="newChatTitle"><b>Add members</b><span>Select people to add to ${escapeHtml(groupDraft.name)}</span></div></div><div class="newChatSearch"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input class="field" id="groupMemberSearch" placeholder="Search username or name" oninput="filterGroupMembers()"></div><div class="newChatUsers" id="groupMemberList"></div><div class="groupCreateFooter"><button class="primary" onclick="finishCreateGroup()">Create group</button></div></div>`;
+  pv.classList.add('show');renderGroupMembers(realUsers);
+}
+function renderGroupMembers(list){const box=document.getElementById('groupMemberList');if(!box)return;box.innerHTML=list.map(u=>{const sel=selectedGroupMembers.includes(u.uid),src=u.photoURL||'';return `<div class="groupMemberPick ${sel?'selected':''}" onclick="toggleGroupMemberPage('${u.uid}')"><input type="checkbox" ${sel?'checked':''}><span class="groupTick">✓</span><div class="groupPickAvatar">${src?`<img src="${escapeHtml(src)}">`:escapeHtml((u.displayName||u.username||'U')[0].toUpperCase())}</div><div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(u.displayName||u.username||'User')}</b><small style="color:#777">@${escapeHtml(u.username||'')}</small></div><span style="color:#777">›</span></div>`}).join('')||'<div style="padding:18px;color:#777">No other registered users.</div>'}
+function filterGroupMembers(){const q=kpUsername(document.getElementById('groupMemberSearch')?.value);renderGroupMembers(realUsers.filter(u=>(u.username||'').toLowerCase().includes(q)||(u.displayName||'').toLowerCase().includes(q)))}
+function toggleGroupMemberPage(uid){selectedGroupMembers.includes(uid)?selectedGroupMembers=selectedGroupMembers.filter(x=>x!==uid):selectedGroupMembers.push(uid);filterGroupMembers()}
+
+async function finishCreateGroup(){
+  if(!fbUser||!fbDb)return toast('Please sign in first');
+  const name=(groupDraft.name||'New Group').trim();if(!name)return toast('Enter a group name');
+  let avatar=groupDraft.avatar||groupAvatarUrl||'';const memberIds=[...new Set([fbUser.uid,...selectedGroupMembers.filter(id=>id&&id!==fbUser.uid)])];
+  try{
+    toast('Creating group…');
+    if(avatar.startsWith('data:')){const blob=await (await fetch(avatar)).blob();const f=new File([blob],'group-avatar',{type:blob.type||'image/jpeg'});avatar=(await cloudinaryUpload(f)).secure_url}
+    const ref=fbDb.collection('chats').doc(),unread={};memberIds.forEach(id=>unread[id]=0);const ts=KPServerTS(),welcome=`Welcome to ${name}! This group was created successfully.`;
+    await ref.set({type:'group',name,about:groupDraft.about||'',groupType:groupDraft.type||'private',avatar,avatarType:avatar?'media':'initial',memberIds,adminIds:[fbUser.uid],createdBy:fbUser.uid,createdAt:ts,lastMessage:welcome,lastMessageAt:ts,lastMessageSenderId:fbUser.uid,messageCount:1,unreadCount:unread});
+    const mr=ref.collection('messages').doc();await mr.set({senderId:fbUser.uid,type:'system',text:welcome,createdAt:ts,edited:false,deleted:false,readBy:[fbUser.uid],deliveredTo:memberIds});
+    const c={id:ref.id,firestoreId:ref.id,name,initial:name[0].toUpperCase(),preview:welcome,time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),sortTime:Date.now(),online:false,unread:0,messageCount:1,group:true,groupType:groupDraft.type||'private',avatar,avatarType:avatar?'media':'initial',about:groupDraft.about||'',adminIds:[fbUser.uid],memberIds,messages:[['system',welcome,new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),'','',{id:mr.id,raw:{senderId:fbUser.uid,type:'system'}}]],startedAt:'Today'};
+    chats.unshift(c);current=c;selectedGroupMembers=[];groupAvatarUrl='';groupDraft={name:'',about:'',type:'private',avatar:''};closePage();renderChats();document.getElementById('app').classList.add('chat-open');startFirebaseMessageListener(c);renderMessages();toast('Group created successfully');
+  }catch(e){console.error('finishCreateGroup',e);toast('Group creation failed: '+(e.code||e.message||'Firestore error'))}
+}
+
+/* Group info: show actual profile photos and member controls. */
+async function openGroupDetails(){
+  if(!current?.group)return;
+  const ids=current.memberIds||[];const members=[];
+  for(const id of ids){if(id===fbUser?.uid){members.push({id:'me',uid:id,name:fbUserProfile?.displayName||'You',username:fbUserProfile?.username||'',initial:((fbUserProfile?.displayName||fbUserProfile?.username||'Y')[0]).toUpperCase(),photoURL:fbUserProfile?.photoURL||'',online:true});continue}let u={};try{const s=await fbDb.collection('users').doc(id).get();if(s.exists)u=s.data()||{}}catch(e){}members.push({id,uid:id,name:u.displayName||u.firstName||u.username||'User',username:u.username||'',initial:((u.displayName||u.username||'U')[0]).toUpperCase(),photoURL:u.photoURL||'',online:false})}
+  const admins=current.adminIds||[];const avatar=current.avatar?`<div class="groupDetailAvatar"><img src="${escapeHtml(current.avatar)}" alt=""></div>`:`<div class="groupDetailAvatar" style="display:grid;place-items:center;font-size:34px;font-weight:800;color:#b8ff22">${escapeHtml(current.initial)}</div>`;
+  const rows=members.map(m=>`<div class="memberRow contactMember"><div class="miniAvatar">${m.photoURL?`<img src="${escapeHtml(m.photoURL)}" alt="">`:escapeHtml(m.initial)}</div><div style="flex:1"><b>${escapeHtml(m.name)}</b><small>@${escapeHtml(m.username||'')}</small></div>${admins.includes(m.uid)?'<span style="color:#b8ff22;font-size:10px">ADMIN</span>':''}${admins.includes(fbUser?.uid)&&m.uid!==fbUser?.uid?`<button class="iconBtn" onclick="removeGroupMember('${m.uid}')" title="Remove"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>`:''}</div>`).join('');
+  const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');
+  pi.innerHTML=`<div class="pageHeader"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div><h2>Group info</h2><div style="color:#777;font-size:12px">${members.length} members</div></div></div><div class="pageCard groupDetailHero">${avatar}<h2>${escapeHtml(current.name)}</h2><div style="color:#777;font-size:12px">${escapeHtml(current.about||'No description')}</div><div class="detailPills"><span>${escapeHtml(current.groupType||'private')}</span><span>${members.length} members</span></div></div><div class="pageCard"><div style="display:flex;justify-content:space-between;align-items:center"><b>Members</b><button class="secondary" onclick="addMembersToCurrentGroup()">＋ Add</button></div>${rows}</div><button class="secondary danger" onclick="exitCurrentGroup()">Exit group</button></div>`;
+  pv.classList.add('show');
+}
+async function addMembersToCurrentGroup(){if(!current?.group)return;await loadRealUsers();const old=[...(current.memberIds||[])];selectedGroupMembers=[];const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');pi.innerHTML=`<div class="newChatPage"><div class="newChatTop"><button class="pageBack" onclick="openGroupDetails()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="newChatTitle"><b>Add group members</b><span>Select additional users</span></div></div><div class="newChatUsers" id="groupMemberList"></div><div class="groupCreateFooter"><button class="primary" onclick="saveAddedGroupMembers('${current.id}')">Add selected members</button></div></div>`;renderGroupMembers(realUsers.filter(u=>!old.includes(u.uid)))}
+async function saveAddedGroupMembers(groupId){if(!current?.group||!selectedGroupMembers.length)return toast('Select at least one user');try{const old=current.memberIds||[],members=[...new Set([...old,...selectedGroupMembers])],unread={...(current.unreadCount||{})};selectedGroupMembers.forEach(id=>unread[id]=0);await fbDb.collection('chats').doc(groupId).set({memberIds:members,unreadCount:unread},{merge:true});current.memberIds=members;selectedGroupMembers=[];await openGroupDetails();toast('Members added')}catch(e){console.error(e);toast('Could not add members')}}
+async function removeGroupMember(uid){if(!current?.group||!current.adminIds?.includes(fbUser.uid))return;try{const members=(current.memberIds||[]).filter(id=>id!==uid);await fbDb.collection('chats').doc(current.id).set({memberIds:members},{merge:true});current.memberIds=members;await openGroupDetails();toast('Member removed')}catch(e){console.error(e);toast('Could not remove member')}}
+async function exitCurrentGroup(){if(!current?.group)return;if(!confirm('Exit this group?'))return;try{const members=(current.memberIds||[]).filter(id=>id!==fbUser.uid);await fbDb.collection('chats').doc(current.id).set({memberIds:members},{merge:true});chats.splice(chats.findIndex(x=>x.id===current.id),1);closePage();closeChat();current=null;renderChats();toast('You left the group')}catch(e){console.error(e);toast('Could not leave group')}}
+
+/* Keep GIFs compact everywhere. */
+(function(){const s=document.createElement('style');s.textContent='.msgMediaWrap img,.gifMsg img{max-width:180px!important;max-height:180px!important;width:auto!important;height:auto!important;object-fit:contain!important;border-radius:12px}';document.head.appendChild(s)})();
+
+
+/* Preserve group draft when choosing a GIF profile. */
+const __openGroupCreatorBase=openGroupCreator;
+openGroupCreator=function(preserve=false){
+  if(!preserve){groupAvatarUrl='';groupDraft={name:'',about:'',type:'private',avatar:''};}
+  const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');
+  pi.innerHTML=`<div class="newChatPage"><div class="newChatTop"><button class="pageBack" onclick="openRealUsers()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="newChatTitle"><b>Create group</b><span>Choose a profile, name and members</span></div></div>
+  <div class="pageCard groupWizard"><div style="text-align:center"><div id="groupAvatarPreviewWrap" class="groupDetailAvatar" style="margin:0 auto 10px;width:100px;height:100px;border-radius:50%;overflow:hidden;background:#171717;display:grid;place-items:center;color:#b8ff22;font-size:30px;font-weight:900">${groupDraft.avatar?`<img src="${escapeHtml(groupDraft.avatar)}" style="width:100%;height:100%;object-fit:cover">`:'G'}</div><div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap"><label class="secondary uploadBtn">Photo<input id="groupPhotoInput2" type="file" accept="image/*" hidden onchange="previewGroupPhoto2(this.files[0])"></label><button class="secondary" onclick="openGifPicker(true)">GIF</button></div></div>
+  <input class="field" id="groupName2" placeholder="Group name" maxlength="60" value="${escapeHtml(groupDraft.name||'')}"><textarea class="callNote" id="groupAbout2" placeholder="Description / purpose" maxlength="160">${escapeHtml(groupDraft.about||'')}</textarea>
+  <div class="groupType"><button class="${groupDraft.type==='private'?'active':''}" id="privateType2" onclick="setGroupType2('private')">Private</button><button class="${groupDraft.type==='public'?'active':''}" id="publicType2" onclick="setGroupType2('public')">Public</button></div>
+  <button class="primary" onclick="openGroupMembersPage()">Add members</button></div></div>`;
+  pv.classList.add('show');
+};
+function selectGif(url,forGroup=false){
+  if(forGroup){groupAvatarUrl=url;groupDraft={...(groupDraft||{}),avatar:url};closeModal();openGroupCreator(true);return;}
+  pendingGifUrl=url;openGifSendPreview(url);
+}
+
 </script>
 </body>
 </html>
