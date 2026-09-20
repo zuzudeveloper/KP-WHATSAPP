@@ -406,7 +406,7 @@ async function ensurePrivateChat(otherUid,otherName,otherPeerId=''){if(!fbUser||
 async function persistTextMessage(text){if(!fbUser||!current||current.group)return false;let chatId=current.firestoreId;if(!chatId&&current.otherUid){chatId=await ensurePrivateChat(current.otherUid,current.name,current.peerId);current.firestoreId=chatId;}if(!chatId)return false;const ref=fbDb.collection('chats').doc(chatId);const msg={senderId:fbUser.uid,type:'text',text,createdAt:firebase.firestore.FieldValue.serverTimestamp(),edited:false,deleted:false,replyTo:null,media:null,reactions:{},deliveredTo:[],readBy:[]};await ref.collection('messages').add(msg);await ref.set({lastMessage:text,lastMessageAt:firebase.firestore.FieldValue.serverTimestamp(),lastMessageSenderId:fbUser.uid},{merge:true});return true}
 async function startFirebasePresence(){if(!fbUser||!fbRtdb)return;fbPresenceRef=fbRtdb.ref('presence/'+fbUser.uid);await fbPresenceRef.onDisconnect().set({state:'offline',lastChanged:firebase.database.ServerValue.TIMESTAMP,peerId:peerId||''});await fbPresenceRef.set({state:'online',lastChanged:firebase.database.ServerValue.TIMESTAMP,peerId:peerId||''});}
 async function firebaseLogout(){try{if(fbPresenceRef)await fbPresenceRef.set({state:'offline',lastChanged:firebase.database.ServerValue.TIMESTAMP,peerId:peerId||''});await fbAuth.signOut()}catch(e){console.error(e)}}
-fbAuth?.onAuthStateChanged(async user=>{fbUser=user||null;if(!user){document.getElementById('authGate').classList.remove('hidden');document.getElementById('loginPanel').classList.remove('hide');document.getElementById('profileSetup').classList.remove('show');document.getElementById('app').classList.add('authLocked');return}try{const ref=fbDb.collection('users').doc(user.uid),snap=await ref.get();if(!snap.exists||!snap.data().phoneNumber||!snap.data().displayName){showProfileSetup(user);return}fbUserProfile=snap.data();document.getElementById('authGate').classList.add('hidden');document.getElementById('app').classList.remove('authLocked');renderChats();renderMessages();initPeer();await startFirebasePresence();await loadFirebaseChats();}catch(e){console.error(e);showProfileSetup(user)}});
+/* Legacy phone-auth listener disabled: username-only auth is handled below. */
 
 /* ===== FULL-SCREEN NEW CHAT + MESSAGE DELETE ===== */
 
@@ -1020,6 +1020,130 @@ if(typeof fbAuth!=='undefined'&&fbAuth){fbAuth.onAuthStateChanged(async user=>{
   if(!user){document.getElementById('authGate')?.classList.remove('hidden');document.getElementById('app')?.classList.add('authLocked');return}
   try{const snap=await fbDb.collection('users').doc(user.uid).get();if(!snap.exists){authBackToLogin();return}fbUserProfile=snap.data();document.getElementById('authGate')?.classList.add('hidden');document.getElementById('app')?.classList.remove('authLocked');removeLegacyAuthNodes();await startFirebasePresence();initPeer();await loadFirebaseChats();renderChats()}catch(e){console.error(e);toast('Could not load your profile')}
 });}
+setTimeout(removeLegacyAuthNodes,250);
+
+
+/* =========================================================
+   FINAL USERNAME-ONLY PATCH
+   ========================================================= */
+function openAccountPage(){
+  const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');
+  const p=fbUserProfile||{};
+  pi.innerHTML=`<div class="pageHeader"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div><h2>Account</h2><div style="color:#777;font-size:12px">Your KP WhatsApp account</div></div></div>
+  <div class="pageCard profileHero"><div class="profileAvatarBig">${p.photoURL?`<img src="${escapeHtml(p.photoURL)}">`:escapeHtml((p.displayName||p.username||'U')[0].toUpperCase())}</div><h2>${escapeHtml(p.displayName||'KP User')}</h2><div class="profileUsernameBadge">@${escapeHtml(p.username||'')}</div><div style="color:#888;margin-top:8px">${escapeHtml(p.bio||'No bio yet')}</div></div>
+  <div class="pageCard"><button class="primary" onclick="openProfileEdit()">Edit profile</button><button class="secondary" style="margin-top:10px" onclick="firebaseLogout()">Sign out</button><button class="secondary accountDanger" style="margin-top:10px" onclick="deleteMyAccount()">Delete account</button></div>`;
+  pv.classList.add('show');
+}
+
+async function loadFirebaseChats(){
+  if(!fbUser||!fbDb)return;
+  try{
+    const snap=await fbDb.collection('chats').where('memberIds','array-contains',fbUser.uid).get();
+    const remote=[];
+    for(const d of snap.docs){
+      const x=d.data()||{};
+      const other=(x.memberIds||[]).find(id=>id!==fbUser.uid);
+      if(x.type==='group'){
+        remote.push({id:d.id,firestoreId:d.id,name:x.name||'Group',initial:(x.name||'G')[0].toUpperCase(),preview:x.lastMessage||'No messages yet',time:kpTime(x.lastMessageAt),sortTime:kpMillis(x.lastMessageAt)||kpMillis(x.createdAt),online:false,unread:x.unreadCount?.[fbUser.uid]||0,messageCount:Number(x.messageCount||0),color:'green',group:true,memberIds:x.memberIds||[],adminIds:x.adminIds||[],avatar:x.avatar||'',avatarType:x.avatarType||'initial',messages:[],startedAt:kpTime(x.createdAt)||'Today'});
+      }else{
+        let u={};
+        if(other){const us=await fbDb.collection('users').doc(other).get();if(us.exists)u=us.data()||{}}
+        let online=false;
+        if(other&&fbRtdb){try{const ps=await fbRtdb.ref('presence/'+other).once('value');online=ps.val()?.state==='online'}catch(e){}}
+        const display=u.displayName||u.firstName||u.username||'Unknown user';
+        remote.push({id:d.id,firestoreId:d.id,name:display,username:u.username||'',initial:(display[0]||'U').toUpperCase(),preview:x.lastMessage||'No messages yet',time:kpTime(x.lastMessageAt),sortTime:kpMillis(x.lastMessageAt)||kpMillis(x.createdAt),online,unread:x.unreadCount?.[fbUser.uid]||0,color:'green',group:false,messages:[],peerId:u.peerId||'',recipientPeerId:u.peerId||'',otherUid:other,photoURL:u.photoURL||'',startedAt:kpTime(x.createdAt)||'Today'});
+      }
+    }
+    remote.sort((a,b)=>(b.sortTime||0)-(a.sortTime||0));
+    chats.splice(0,chats.length,...remote);
+    renderChats();
+    if(current&&!chats.some(c=>c.id===current.id))current=null;
+  }catch(e){console.error('loadFirebaseChats:',e);toast('Could not load chats: '+(e.code||e.message||'permission error'))}
+}
+
+async function ensurePrivateChat(otherUid,otherName='',otherPeerId=''){
+  if(!fbUser||!otherUid||otherUid===fbUser.uid)throw new Error('Invalid chat user');
+  const ids=[fbUser.uid,otherUid].sort();
+  const chatId=ids.join('_');
+  const ref=fbDb.collection('chats').doc(chatId);
+  const snap=await ref.get();
+  if(!snap.exists){
+    const unread={};unread[fbUser.uid]=0;unread[otherUid]=0;
+    const peerIds={};peerIds[fbUser.uid]=window.peerId||'';peerIds[otherUid]=otherPeerId||'';
+    await ref.set({type:'private',memberIds:ids,createdAt:KPServerTS(),lastMessage:'',lastMessageAt:KPServerTS(),lastMessageSenderId:'',unreadCount:unread,peerIds});
+  }
+  return chatId;
+}
+
+async function startChatWithUser(uid){
+  if(!fbUser||uid===fbUser.uid)return;
+  try{
+    let u=realUsers.find(x=>x.uid===uid);
+    if(!u){const us=await fbDb.collection('users').doc(uid).get();if(!us.exists)throw new Error('User not found');u={...us.data(),uid}}
+    const chatId=await ensurePrivateChat(uid,u.displayName||u.username||'User',u.peerId||'');
+    let c=chats.find(x=>x.firestoreId===chatId);
+    const display=u.displayName||u.username||'User';
+    if(!c){c={id:chatId,firestoreId:chatId,name:display,username:u.username||'',initial:(display[0]||'U').toUpperCase(),preview:'No messages yet',time:'',sortTime:Date.now(),online:false,unread:0,color:'green',group:false,messages:[],peerId:u.peerId||'',recipientPeerId:u.peerId||'',otherUid:uid,photoURL:u.photoURL||'',startedAt:'Today'};chats.unshift(c)}
+    else Object.assign(c,{name:display,username:u.username||'',peerId:u.peerId||'',recipientPeerId:u.peerId||'',otherUid:uid,photoURL:u.photoURL||'',initial:(display[0]||'U').toUpperCase()});
+    renderChats();closePage();current=c;document.getElementById('app').classList.add('chat-open');await loadFirebaseMessages(c);startFirebaseMessageListener(c);await markChatRead(c);renderMessages();
+  }catch(e){console.error('startChatWithUser:',e);toast('Could not open this chat: '+(e.code||e.message||'Firestore error'))}
+}
+
+function renderChats(){
+  const list=document.getElementById('chatList');if(!list)return;
+  const q=(document.getElementById('search')?.value||'').toLowerCase().trim();
+  const arr=chats.filter(c=>(activeTab==='all'||(activeTab==='unread'&&c.unread)||(activeTab==='groups'&&c.group))&&((c.name||'').toLowerCase().includes(q)||(c.username||'').toLowerCase().includes(q)));
+  arr.sort((a,b)=>(b.sortTime||0)-(a.sortTime||0));
+  list.innerHTML=arr.map(c=>{const av=c.photoURL?`<img src="${escapeHtml(c.photoURL)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:escapeHtml(c.initial||'U');return `<div class="chatRow ${current?.id===c.id?'selected':''}" onclick="openChat('${String(c.id).replace(/'/g,"\\'")}')"><div class="avatar green">${av}</div><div class="chatMeta"><div class="chatName"><b>${escapeHtml(c.name||'User')}</b>${c.username&&!c.group?`<small style="display:block;color:#777">@${escapeHtml(c.username)}</small>`:''}</div><div class="chatPreview">${escapeHtml(c.preview||'')}</div></div><div class="chatSide"><small>${escapeHtml(c.time||'')}</small>${c.unread?`<span class="unread">${c.unread}</span>`:''}${c.group&&c.messageCount?`<span class="unread">${c.messageCount}</span>`:''}</div></div>`}).join('')||'<div class="empty">No chats yet.<br>Tap + to start a new chat.</div>';
+}
+
+async function openChat(id){
+  const c=chats.find(x=>String(x.id)===String(id));if(!c)return;
+  current=c;c.unread=0;renderChats();document.getElementById('app').classList.add('chat-open');
+  try{await loadFirebaseMessages(c);startFirebaseMessageListener(c);await markChatRead(c);renderMessages()}catch(e){console.error('openChat:',e);toast('Could not open this chat: '+(e.code||e.message||'Firestore error'))}
+}
+
+async function deleteMyAccount(){
+  if(!fbUser)return;
+  if(!confirm('Delete your KP WhatsApp account?'))return;
+  try{
+    const uid=fbUser.uid,username=fbUserProfile?.username;
+    if(username)await fbDb.collection('usernames').doc(username).delete().catch(()=>{});
+    await fbDb.collection('users').doc(uid).delete();
+    await fbUser.delete();
+    location.reload();
+  }catch(e){console.error(e);toast('Could not delete account: '+(e.code||e.message||'error'))}
+}
+
+function startVoiceCall(){
+  if(!current||current.group){toast('Voice calls are 1-on-1 only');return}
+  const rid=current.peerId||current.recipientPeerId;if(!rid){toast('This user is not online for voice calling yet.');return}
+  if(!peer||!peer.open){toast('Voice calling is still connecting…');return}
+  showCallModal('outgoing',current.name,current.initial||'A');
+  ensureLocalAudio().then(stream=>{localStream=stream;activeCall=peer.call(rid,stream,{metadata:{uid:fbUser.uid,name:fbUserProfile?.displayName||'KP User',username:fbUserProfile?.username||'',peerId}});if(!activeCall)throw new Error('Call failed');bindCall(activeCall,current.name,current.initial||'A');logCall('calling')}).catch(e=>{console.error(e);stopLocalStream();hideCallModal();toast('Could not start voice call')})
+}
+
+function handleIncomingCall(call){
+  if(activeCall||incomingCall){try{call.close()}catch(e){}return}
+  incomingCall=call;const meta=call.metadata||{};const callerName=meta.name||'Incoming caller';
+  showCallModal('incoming',callerName,(callerName[0]||'U').toUpperCase());
+  const cp=document.getElementById('callPeer');if(cp)cp.textContent=meta.username?'@'+meta.username:'';
+  playRingtone();
+}
+
+if(typeof fbAuth!=='undefined'&&fbAuth){
+  fbAuth.onAuthStateChanged(async user=>{
+    fbUser=user||null;
+    if(!user){document.getElementById('authGate')?.classList.remove('hidden');document.getElementById('app')?.classList.add('authLocked');return}
+    try{
+      const snap=await fbDb.collection('users').doc(user.uid).get();
+      if(!snap.exists){toast('Profile not found. Please create your username profile.');return}
+      fbUserProfile=snap.data()||{};
+      document.getElementById('authGate')?.classList.add('hidden');document.getElementById('app')?.classList.remove('authLocked');
+      removeLegacyAuthNodes();initPeer();await startFirebasePresence();await loadFirebaseChats();renderChats();
+    }catch(e){console.error('auth/profile:',e);toast('Firebase error: '+(e.code||e.message||'permission error'))}
+  });
+}
 setTimeout(removeLegacyAuthNodes,250);
 
 </script>
