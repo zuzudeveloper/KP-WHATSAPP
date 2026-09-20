@@ -68,28 +68,29 @@ button,.row,.iconBtn,.nav button,.attachOption,.primary,.secondary,.send{transit
 .newChatFab{position:absolute;right:18px;bottom:82px;width:56px;height:56px;border-radius:18px;border:1px solid #b8ff2255;background:linear-gradient(145deg,#b8ff22,#6fa900);color:#071000;display:grid;place-items:center;box-shadow:0 14px 38px #000,0 0 28px #b8ff2230;z-index:8;transition:.2s}.newChatFab:hover{transform:translateY(-3px) scale(1.03)}.newChatFab svg{width:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .dialPad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.dialKey{height:58px;border:1px solid #292929;background:#141414;border-radius:18px;color:#fff;font-size:20px;font-weight:800}.dialKey small{display:block;font-size:9px;color:#777;margin-top:2px}.dialInput{height:58px;font-size:24px;text-align:center;letter-spacing:3px}.callPhone{color:#999;font-size:13px;margin-top:4px}.callNote{width:100%;min-height:110px;background:#111;border:1px solid #292929;border-radius:16px;color:#fff;padding:12px;resize:vertical}.userRow{display:flex;align-items:center;gap:12px;padding:12px;border-bottom:1px solid #1d1d1d;cursor:pointer}.userRow:hover{background:#151515}.userAvatar{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:#202020;color:#b8ff22;font-weight:900;overflow:hidden}.userAvatar img{width:100%;height:100%;object-fit:cover}.userMeta{flex:1;min-width:0}.userMeta b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.userMeta small{display:block;color:#777;margin-top:3px}.userOnline{width:8px;height:8px;border-radius:50%;background:#b8ff22;box-shadow:0 0 10px #b8ff22}.accountDanger{border-color:#5b2028!important;color:#ff6070!important}
 .systemMessage{display:flex;justify-content:center;margin:12px auto;color:#8c8c8c;font-size:11px}.systemMessage span{background:#151515;border:1px solid #292929;border-radius:12px;padding:7px 12px;box-shadow:0 8px 24px #0005}.groupAvatar{overflow:hidden}.groupAvatar img{width:100%;height:100%;object-fit:cover}
+
+/* USERNAME-ONLY FINAL UI */
+.username-only-hide{display:none!important}.profileHero{display:grid;place-items:center;text-align:center;padding:18px}.profileAvatarBig{width:96px;height:96px;border-radius:50%;overflow:hidden;background:#171717;border:1px solid #303030;display:grid;place-items:center;color:var(--green);font-size:32px;font-weight:900;margin-bottom:12px}.profileAvatarBig img{width:100%;height:100%;object-fit:cover}.profileActions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.profileActions button{min-height:44px}.uploadBtn{cursor:pointer}.newChatFull{min-height:100dvh;padding:0 16px 30px;background:radial-gradient(circle at 80% 0%,#b8ff2210,transparent 34%),#070707}.newChatFull .newChatTop{margin:0 -16px;padding-left:16px;padding-right:16px}.newChatUsers{border:1px solid #222;border-radius:18px;overflow:hidden;background:#0d0d0d}.usernameHint{font-size:11px;color:#777;margin:7px 2px 12px}.callUserSearch{margin:12px 0}.callUserSearch .field{margin:0}.callResult{margin-top:10px}.profileEditGrid{display:grid;gap:10px}.profilePhotoTools{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.profileUsernameBadge{font-size:12px;color:#999;margin-top:3px}.randomBadge{font-size:9px;color:#777;border:1px solid #262626;padding:4px 7px;border-radius:999px}
 </style>
 </head>
 <body>
 <div class="authGate" id="authGate">
   <div class="authCard">
     <div id="loginPanel" class="loginPanel">
-      <div class="authBrand"><div class="authLogo"><svg viewBox="0 0 24 24"><path d="M5 5.5A3.5 3.5 0 0 1 8.5 2h7A3.5 3.5 0 0 1 19 5.5v7a3.5 3.5 0 0 1-3.5 3.5H11l-4.5 4v-4.4A3.5 3.5 0 0 1 3 12.2V7.5z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></div><div class="authTitle">KP WhatsApp</div><div class="authSub">Sign in with your Google account to continue. Your Google email and account identity are used for authentication.</div></div>
-      <button class="googleBtn" onclick="firebaseGoogleLogin()"><svg viewBox="0 0 24 24"><path fill="#4285F4" d="M21.35 12.27c0-.71-.06-1.4-.18-2.05H12v3.88h5.24a4.48 4.48 0 0 1-1.94 2.94v2.44h3.14c1.84-1.69 2.91-4.18 2.91-7.21z"/><path fill="#34A853" d="M12 21.7c2.63 0 4.84-.87 6.45-2.36l-3.14-2.44c-.87.58-1.98.92-3.31.92-2.54 0-4.69-1.72-5.46-4.03H3.3v2.52A9.75 9.75 0 0 0 12 21.7z"/><path fill="#FBBC05" d="M6.54 13.79A5.86 5.86 0 0 1 6.23 12c0-.62.11-1.22.31-1.79V7.69H3.3A9.75 9.75 0 0 0 2.25 12c0 1.57.38 3.05 1.05 4.31l3.24-2.52z"/><path fill="#EA4335" d="M12 6.18c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.84 3.2 14.63 2.3 12 2.3a9.75 9.75 0 0 0-8.7 5.39l3.24 2.52C7.31 7.9 9.46 6.18 12 6.18z"/></svg>Continue with Google</button>
-      <div class="authDivider">OR</div>
-      <div class="authLabel">KP Number</div><input class="field" id="loginPhone" type="tel" inputmode="numeric" maxlength="6" placeholder="6-digit number"><div class="passwordWrap"><input class="field" id="passwordAuth" type="password" placeholder="Password" autocomplete="current-password"><button type="button" class="eyeBtn" id="loginEye" onclick="togglePassword('passwordAuth','loginEye')" aria-label="Show password"><svg class="eyeIcon eyeClosed" viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c5.2 0 9 7 9 7a17 17 0 0 1-3.2 3.8"/><path d="M6.1 6.1C3.8 7.7 3 12 3 12s3.8 7 9 7c1.2 0 2.3-.2 3.3-.6"/></svg><svg class="eyeIcon eyeOpen" viewBox="0 0 24 24"><path d="M2.5 12s3.7-7 9.5-7 9.5 7 9.5 7-3.7 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="2.7"/></svg></button></div><button class="primary" onclick="firebasePhoneLogin()">Log in</button><button class="createAccountBtn" onclick="openCreateAccount()">Create account</button>
-      <div class="authError" id="authError"></div><div class="authHint">Use your 6-digit KP number and password. No OTP is required.</div>
+      <div class="authBrand"><div class="authLogo"><svg viewBox="0 0 24 24"><path d="M5 5.5A3.5 3.5 0 0 1 8.5 2h7A3.5 3.5 0 0 1 19 5.5v7a3.5 3.5 0 0 1-3.5 3.5H11l-4.5 4v-4.4A3.5 3.5 0 0 1 3 12.2V7.5z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></div><div class="authTitle">KP WhatsApp</div><div class="authSub">Sign in with your unique username and password. No phone number, OTP, or Google login.</div></div>
+      <div class="authLabel">Username</div><input class="field" id="loginUsername" type="text" maxlength="32" autocomplete="username" placeholder="Enter username">
+      <div class="passwordWrap"><input class="field" id="passwordAuth" type="password" placeholder="Password" autocomplete="current-password"><button type="button" class="eyeBtn" id="loginEye" onclick="togglePassword('passwordAuth','loginEye')" aria-label="Show password"><svg class="eyeIcon eyeClosed" viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c5.2 0 9 7 9 7a17 17 0 0 1-3.2 3.8"/><path d="M6.1 6.1C3.8 7.7 3 12 3 12s3.8 9 9 9c1.2 0 2.3-.2 3.3-.6"/></svg><svg class="eyeIcon eyeOpen" viewBox="0 0 24 24"><path d="M2.5 12s3.7-7 9.5-7 9.5 7 9.5 7-3.7 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="2.7"/></svg></button></div>
+      <button class="primary" onclick="firebaseUsernameLogin()">Log in</button><button class="createAccountBtn" onclick="openCreateAccount()">Create account</button>
+      <div class="authError" id="authError"></div><div class="authHint">Username + password only.</div>
     </div>
     <div id="profileSetup" class="profileSetup">
       <button class="authBack" onclick="authBackToLogin()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button>
-      <div class="authTitle" id="profileSetupTitle">Create your account</div><div class="authSub">Choose your unique 6-digit KP number, password, name and age. Your password is securely handled by Firebase Authentication.</div>
-      <div class="authUser" id="authUserCard" style="display:none"></div>
-      <label style="display:block;color:#999;font-size:11px;margin:10px 0 6px">Your name</label><input class="field" id="profileName" maxlength="60" placeholder="Enter your name">
-      <label style="display:block;color:#999;font-size:11px;margin:4px 0 6px">6-digit KP number</label><input class="field" id="profilePhone" inputmode="numeric" maxlength="6" placeholder="Example: 123456">
-      <label style="display:block;color:#999;font-size:11px;margin:4px 0 6px">10-digit mobile number</label><input class="field" id="profileMobile" inputmode="numeric" maxlength="10" placeholder="Example: 9876543210">
+      <div class="authTitle" id="profileSetupTitle">Create your account</div><div class="authSub">Create a unique username, your name, age and password.</div>
+      <label style="display:block;color:#999;font-size:11px;margin:10px 0 6px">Username</label><input class="field" id="profileUsername" maxlength="32" autocomplete="username" placeholder="e.g. sinan_07">
+      <label style="display:block;color:#999;font-size:11px;margin:4px 0 6px">Your name</label><input class="field" id="profileName" maxlength="60" placeholder="Enter your name">
       <label style="display:block;color:#999;font-size:11px;margin:4px 0 6px">Age</label><input class="field" id="profileAge" type="number" min="13" max="120" inputmode="numeric" placeholder="Your age">
-      <label style="display:block;color:#999;font-size:11px;margin:4px 0 6px">Password</label><div class="passwordWrap"><input class="field" id="profilePassword" type="password" minlength="6" placeholder="At least 6 characters" autocomplete="new-password"><button type="button" class="eyeBtn" id="profileEye" onclick="togglePassword('profilePassword','profileEye')" aria-label="Show password"><svg class="eyeIcon eyeClosed" viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c5.2 0 9 7 9 7a17 17 0 0 1-3.2 3.8"/><path d="M6.1 6.1C3.8 7.7 3 12 3 12s3.8 7 9 7c1.2 0 2.3-.2 3.3-.6"/></svg><svg class="eyeIcon eyeOpen" viewBox="0 0 24 24"><path d="M2.5 12s3.7-7 9.5-7 9.5 7 9.5 7-3.7 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="2.7"/></svg></button></div>
-      <div class="authError" id="profileError"></div><button class="primary" style="margin-top:12px" onclick="completeFirebaseProfile()">Create &amp; Enter KP WhatsApp</button><button class="signoutBtn" onclick="authBackToLogin()">Back to login</button>
+      <label style="display:block;color:#999;font-size:11px;margin:4px 0 6px">Password</label><div class="passwordWrap"><input class="field" id="profilePassword" type="password" minlength="6" placeholder="At least 6 characters" autocomplete="new-password"><button type="button" class="eyeBtn" id="profileEye" onclick="togglePassword('profilePassword','profileEye')" aria-label="Show password"><svg class="eyeIcon eyeClosed" viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c5.2 0 9 7 9 7a17 17 0 0 1-3.2 3.8"/><path d="M6.1 6.1C3.8 7.7 3 12 3 12s3.8 9 9 9c1.2 0 2.3-.2 3.3-.6"/></svg><svg class="eyeIcon eyeOpen" viewBox="0 0 24 24"><path d="M2.5 12s3.7-7 9.5-7 9.5 7 9.5 7-3.7 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="2.7"/></svg></button></div>
+      <div class="authError" id="profileError"></div><button class="primary" style="margin-top:12px" onclick="completeUsernameProfile()">Create &amp; Enter KP WhatsApp</button><button class="signoutBtn" onclick="authBackToLogin()">Back to login</button>
     </div>
   </div>
 </div>
@@ -97,7 +98,7 @@ button,.row,.iconBtn,.nav button,.attachOption,.primary,.secondary,.send{transit
 <aside class="sidebar">
 <header class="top">
 <div class="brand"><div class="brandMark"><svg viewBox="0 0 24 24"><path d="M5 5.5A3.5 3.5 0 0 1 8.5 2h7A3.5 3.5 0 0 1 19 5.5v7a3.5 3.5 0 0 1-3.5 3.5H11l-4.5 4v-4.4A3.5 3.5 0 0 1 3 12.2V7.5z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></div><span>KP WhatsApp</span></div>
-<div class="actions"><button class="iconBtn" onclick="openModal('new')" aria-label="new chat"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><button class="iconBtn" onclick="openPage('settings')" aria-label="settings"><svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19 13.5 1.2 1-.9 1.6-1.5-.4a7.7 7.7 0 0 1-1.6 1l-.2 1.6h-1.9l-.5-1.5a7.7 7.7 0 0 1-1.9 0l-.6 1.5h-1.8l-.2-1.6a7.6 7.6 0 0 1-1.6-1l-1.5.4-.9-1.6 1.2-1a7.2 7.2 0 0 1-.2-1.5c0-.5.1-1 .2-1.5l-1.2-1 .9-1.6 1.5.4a7.6 7.6 0 0 1 1.6-1L9 5.6h1.8l.6 1.5a7.7 7.7 0 0 1 1.9 0l.5-1.5h1.9l.2 1.6a7.7 7.7 0 0 1 1.6 1l1.5-.4.9 1.6-1.2 1c.1.5.2 1 .2 1.5s-.1 1-.2 1.5Z"/></svg></button></div>
+<div class="actions"><button class="iconBtn" onclick="openRealUsers()" aria-label="new chat"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><button class="iconBtn" onclick="openPage('settings')" aria-label="settings"><svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19 13.5 1.2 1-.9 1.6-1.5-.4a7.7 7.7 0 0 1-1.6 1l-.2 1.6h-1.9l-.5-1.5a7.7 7.7 0 0 1-1.9 0l-.6 1.5h-1.8l-.2-1.6a7.6 7.6 0 0 1-1.6-1l-1.5.4-.9-1.6 1.2-1a7.2 7.2 0 0 1-.2-1.5c0-.5.1-1 .2-1.5l-1.2-1 .9-1.6 1.5.4a7.6 7.6 0 0 1 1.6-1L9 5.6h1.8l.6 1.5a7.7 7.7 0 0 1 1.9 0l.5-1.5h1.9l.2 1.6a7.7 7.7 0 0 1 1.6 1l1.5-.4.9 1.6-1.2 1c.1.5.2 1 .2 1.5s-.1 1-.2 1.5Z"/></svg></button></div>
 </header>
 <div class="search"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 5 5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><input id="search" placeholder="Search chats" oninput="filterChats()"></div>
 <div class="tabs"><button class="tab active" onclick="setTab(this,'all')">All</button><button class="tab" onclick="setTab(this,'unread')">Unread</button><button class="tab" onclick="setTab(this,'groups')">Groups</button></div>
@@ -338,7 +339,6 @@ async function openRealUsers(){
  s.innerHTML='<div class="handle"></div><h3>New chat</h3><div class="gifHint">Only real Firebase users are shown. Demo/bot accounts are never added.</div><input class="field" id="userSearch" placeholder="Search saved name or 6-digit number" oninput="filterRealUsers()"><div id="realUserList" style="max-height:55vh;overflow:auto"><div style="padding:15px;color:#777">Loading users…</div></div><button class="secondary" onclick="closeModal()">Cancel</button>';
  document.getElementById('modalBack').classList.add('show'); await loadRealUsers();
 }
-let realUsers=[];
 async function loadRealUsers(){
  if(!fbUser)return;try{const snap=await fbDb.collection('users').get();realUsers=[];snap.forEach(d=>{if(d.id===fbUser.uid)return;const u=d.data();realUsers.push({...u,uid:d.id})});renderRealUsers(realUsers)}catch(e){console.error(e);document.getElementById('realUserList').innerHTML='<div style="padding:15px;color:#ff6677">Could not load users.</div>'}}
 function renderRealUsers(list){const box=document.getElementById('realUserList');if(!box)return;box.innerHTML=list.map(u=>`<div class="userRow" onclick="startChatWithUser('${u.uid}')"><div class="userAvatar">${u.photoURL?`<img src="${escapeHtml(u.photoURL)}">`:escapeHtml((u.displayName||u.firstName||'U')[0].toUpperCase())}</div><div class="userMeta"><b>${escapeHtml(u.displayName||u.firstName||'Unknown user')}</b><small>+91 ${escapeHtml(u.phoneNumber||'')} · ${u.online?'Online':'KP user'}</small></div><span>›</span></div>`).join('')||'<div style="padding:15px;color:#777">No other registered users found.</div>'}
@@ -801,6 +801,226 @@ function startVoiceCall(){if(!current||current.group){toast('Voice calls are 1-o
 function handleIncomingCall(call){if(activeCall||incomingCall){try{call.close()}catch(e){}return}incomingCall=call;const meta=call.metadata||{};const callerName=meta.name||'Incoming caller';showCallModal('incoming',callerName,(callerName[0]||'U').toUpperCase());document.getElementById('callSub').textContent='Incoming call';document.getElementById('callPeer').textContent=meta.phone?'+91 '+meta.phone:'';playRingtone()}
 function showCallModal(type,name,initial){const o=document.getElementById('callOverlay');document.getElementById('callAvatar').textContent=initial||'A';document.getElementById('callTitle').textContent=name||'Voice call';const sub=document.getElementById('callSub'),a=document.getElementById('callActions'),timer=document.getElementById('callTimer');timer.textContent='';if(type==='incoming'){sub.textContent='Ringing…';a.innerHTML='<button class="callAction accept" onclick="acceptIncomingCall()" title="Answer"><svg viewBox="0 0 24 24"><path d="M6 4.5 9 4l2 4-2 2a13 13 0 0 0 5 5l2-2 4 2-.5 3a2 2 0 0 1-2.2 1.5C9.5 18.2 5.8 14.5 4.5 6.7A2 2 0 0 1 6 4.5Z"/></svg></button><button class="callAction end" onclick="rejectIncomingCall()" title="Reject"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>'}else if(type==='outgoing'){sub.textContent='Calling…';a.innerHTML='<button class="callAction end" onclick="endVoiceCall()" title="End call"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>'}else{sub.textContent='Connected';a.innerHTML='<button class="callAction" id="muteCallBtn" onclick="toggleMute()" title="Mute"><svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg></button><button class="callAction" onclick="appendCallNote()" title="Notes"><svg viewBox="0 0 24 24"><path d="M6 4h12v16H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></button><button class="callAction end" onclick="endVoiceCall()" title="End call"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>'}o.classList.add('show')}
 function initPeer(){if(typeof Peer==='undefined'){toast('PeerJS could not load');return}try{peer=new Peer(getMyPeerId(),{debug:1});peer.on('open',async id=>{peerId=id;window.KP_PEER_ID=id;if(fbUser)try{await fbDb.collection('users').doc(fbUser.uid).set({peerId:id,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})}catch(e){}});peer.on('call',handleIncomingCall);peer.on('error',err=>{if(err?.type==='unavailable-id'){localStorage.removeItem('kpwa_peer_id');setTimeout(initPeer,500)}else console.warn('PeerJS',err)});peer.on('disconnected',()=>{try{peer.reconnect()}catch(e){}})}catch(e){console.error(e)}}
+
+
+/* =========================================================
+   KP WHATSAPP — USERNAME ONLY FINAL OVERRIDES
+   No phone numbers / no Google login / no OTP.
+   ========================================================= */
+const KP_USERNAME_RE=/^[a-zA-Z0-9._-]{3,32}$/;
+function kpUsername(v){return String(v||'').trim().toLowerCase()}
+function kpUsernameEmail(u){return `${kpUsername(u)}@kpwa-user.invalid`}
+function shuffleKP(a){const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]]}return x}
+
+function authBackToLogin(){
+  document.getElementById('profileSetup')?.classList.remove('show');
+  document.getElementById('loginPanel')?.classList.remove('hide');
+  setProfileError('');setAuthError('');
+}
+function openCreateAccount(){
+  document.getElementById('loginPanel')?.classList.add('hide');
+  document.getElementById('profileSetup')?.classList.add('show');
+  const ids=['profileUsername','profileName','profileAge','profilePassword'];ids.forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});
+  setProfileError('');
+}
+
+async function firebaseUsernameLogin(){
+  setAuthError('');
+  const username=kpUsername(document.getElementById('loginUsername')?.value);
+  const pass=document.getElementById('passwordAuth')?.value||'';
+  if(!KP_USERNAME_RE.test(username)){setAuthError('Enter a valid username (3–32 letters, numbers, . _ or -).');return}
+  if(!pass){setAuthError('Enter your password.');return}
+  try{
+    const snap=await fbDb.collection('usernames').doc(username).get();
+    if(!snap.exists){setAuthError('No account exists for this username.');return}
+    const data=snap.data()||{};
+    await fbAuth.signInWithEmailAndPassword(data.email||kpUsernameEmail(username),pass);
+  }catch(e){console.error(e);setAuthError(e?.code==='auth/wrong-password'||e?.code==='auth/invalid-credential'?'Incorrect username or password.':firebaseAuthMessage(e))}
+}
+
+async function completeUsernameProfile(){
+  setProfileError('');
+  const username=kpUsername(document.getElementById('profileUsername')?.value);
+  const name=document.getElementById('profileName')?.value.trim();
+  const age=Number(document.getElementById('profileAge')?.value);
+  const pass=document.getElementById('profilePassword')?.value||'';
+  if(!KP_USERNAME_RE.test(username))return setProfileError('Username must be 3–32 characters: letters, numbers, . _ or -.');
+  if(!name)return setProfileError('Enter your name.');
+  if(!Number.isInteger(age)||age<13||age>120)return setProfileError('Enter a valid age.');
+  if(pass.length<6)return setProfileError('Password must be at least 6 characters.');
+  let cred=null;
+  try{
+    const usernameRef=fbDb.collection('usernames').doc(username);
+    const taken=await usernameRef.get();
+    if(taken.exists)return setProfileError('That username is already in use. Choose another one.');
+    cred=await fbAuth.createUserWithEmailAndPassword(kpUsernameEmail(username),pass);
+    fbUser=cred.user;
+    const uid=fbUser.uid;
+    await fbDb.runTransaction(async tx=>{
+      const check=await tx.get(usernameRef);
+      if(check.exists)throw new Error('USERNAME_TAKEN');
+      tx.set(usernameRef,{uid,email:kpUsernameEmail(username),username,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      tx.set(fbDb.collection('users').doc(uid),{
+        uid,username,firstName:name.split(/\s+/)[0],lastName:name.split(/\s+/).slice(1).join(' '),displayName:name,age,
+        email:kpUsernameEmail(username),photoURL:'',avatarType:'initial',bio:'',peerId:'',
+        createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp(),lastSeen:firebase.firestore.FieldValue.serverTimestamp(),
+        privacy:{lastSeen:'everyone',profilePhoto:'everyone',about:'everyone',readReceipts:true},settings:{notifications:true,sounds:true,darkMode:true},blockedUsers:[]
+      });
+    });
+    fbUserProfile=(await fbDb.collection('users').doc(uid).get()).data();
+    document.getElementById('authGate').classList.add('hidden');document.getElementById('app').classList.remove('authLocked');
+    await startFirebasePresence();initPeer();await loadFirebaseChats();renderChats();toast('Account created successfully');
+  }catch(e){
+    console.error(e);
+    if(e.message==='USERNAME_TAKEN'){if(fbUser){await fbUser.delete().catch(()=>{})}fbUser=null;setProfileError('That username is already in use. Choose another one.');return}
+    if(e.code==='auth/email-already-in-use')return setProfileError('That username is already in use. Choose another one.');
+    setProfileError(firebaseAuthMessage(e)||e.message||'Could not create account.');
+  }
+}
+
+/* Remove any legacy Google/number buttons if an older cached DOM survives. */
+function removeLegacyAuthNodes(){
+  document.querySelectorAll('.googleBtn,#loginPhone,#profilePhone,#profileMobile').forEach(el=>{const wrap=el.closest('.passwordWrap')||el;wrap.remove()});
+  document.querySelectorAll('.authDivider').forEach(e=>e.remove());
+  document.querySelectorAll('.authHint').forEach(e=>{if(e.closest('#authGate'))e.textContent='Username + password only.'});
+}
+
+async function openRealUsers(){
+  if(!fbUser){toast('Please sign in first');return}
+  const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');
+  pi.innerHTML=`<div class="newChatFull"><div class="newChatTop"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="newChatTitle"><b>Start a New Chat</b><span>Real KP WhatsApp users</span></div></div><div class="newChatSearch"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input class="field" id="userSearch" placeholder="Search username or name" oninput="filterRealUsers()"></div><div class="usernameHint">Users appear in a changing order. The list is shuffled instead of sorted by account creation.</div><div class="newChatUsers" id="realUserList"><div style="padding:18px;color:#777">Loading users…</div></div></div>`;
+  pv.classList.add('show');
+  await loadRealUsers();
+}
+let realUsers=[];
+async function loadRealUsers(){
+  if(!fbUser)return;
+  try{
+    const snap=await fbDb.collection('users').get();
+    realUsers=[];snap.forEach(d=>{if(d.id!==fbUser.uid){const u=d.data()||{};realUsers.push({...u,uid:d.id})}});
+    realUsers=shuffleKP(realUsers);renderRealUsers(realUsers);
+  }catch(e){console.error(e);const b=document.getElementById('realUserList');if(b)b.innerHTML='<div style="padding:18px;color:#ff6677">Could not load users. Check Firestore Rules.</div>'}
+}
+function renderRealUsers(list){
+  const box=document.getElementById('realUserList');if(!box)return;
+  box.innerHTML=list.map(u=>`<div class="userRow" onclick="startChatWithUser('${u.uid}')"><div class="userAvatar">${u.photoURL?`<img src="${escapeHtml(u.photoURL)}">`:escapeHtml((u.displayName||u.username||'U')[0].toUpperCase())}</div><div class="userMeta"><b>${escapeHtml(u.displayName||'Unknown user')}</b><small>@${escapeHtml(u.username||'unknown')} · ${u.online?'Online':'KP WhatsApp user'}</small></div><span class="randomBadge">${u.online?'ONLINE':'USER'}</span></div>`).join('')||'<div style="padding:18px;color:#777">No other real accounts yet.</div>';
+}
+function filterRealUsers(){
+  const q=kpUsername(document.getElementById('userSearch')?.value);
+  const filtered=realUsers.filter(u=>(u.username||'').toLowerCase().includes(q)||(u.displayName||'').toLowerCase().includes(q));
+  renderRealUsers(filtered);
+}
+async function startChatWithUser(uid){
+  const u=realUsers.find(x=>x.uid===uid);if(!u||uid===fbUser?.uid)return;
+  try{
+    const chatId=await ensurePrivateChat(uid,u.displayName||u.username||'User',u.peerId||'');
+    let c=chats.find(x=>x.firestoreId===chatId);
+    if(!c){c={id:chatId,firestoreId:chatId,name:u.displayName||u.username,initial:(u.displayName||u.username||'U')[0].toUpperCase(),preview:'No messages yet',time:'',sortTime:Date.now(),online:!!u.online,unread:0,color:'green',group:false,messages:[],peerId:u.peerId||'',recipientPeerId:u.peerId||'',otherUid:uid,username:u.username||'',photoURL:u.photoURL||'',startedAt:'Today'};chats.push(c)}
+    else{Object.assign(c,{name:u.displayName||u.username,initial:(u.displayName||u.username||'U')[0].toUpperCase(),peerId:u.peerId||'',recipientPeerId:u.peerId||'',otherUid:uid,username:u.username||'',photoURL:u.photoURL||'',online:!!u.online})}
+    renderChats();closePage();openChat(c.id);await loadFirebaseMessages(c);
+  }catch(e){console.error(e);toast('Could not open this chat. Check Firestore Rules.')}
+}
+
+/* Rebuild chat rows with username, no phone-number fallback. */
+function renderChats(){
+  const list=document.getElementById('chatList');if(!list)return;
+  const q=(document.getElementById('search')?.value||'').toLowerCase().trim();
+  const arr=chats.filter(c=>(activeTab==='all'||(activeTab==='unread'&&c.unread)||(activeTab==='groups'&&c.group))&&((c.name||'').toLowerCase().includes(q)||(c.username||'').toLowerCase().includes(q)));
+  arr.sort((a,b)=>(b.sortTime||0)-(a.sortTime||0));
+  list.innerHTML=arr.map(c=>{const av=c.avatar?`<img src="${escapeHtml(c.avatar)}" style="width:100%;height:100%;object-fit:cover">`:(c.photoURL?`<img src="${escapeHtml(c.photoURL)}" style="width:100%;height:100%;object-fit:cover">`:escapeHtml(c.initial||'U'));return `<div class="chatRow ${current?.id===c.id?'selected':''}" onclick="openChat('${c.id}')"><div class="avatar green">${av}</div><div class="chatMeta"><div class="chatName"><b>${escapeHtml(c.name||'User')}</b>${c.username&&!c.group?`<small style="display:block;color:#777">@${escapeHtml(c.username)}</small>`:''}</div><div class="chatPreview">${escapeHtml(c.preview||'')}</div></div><div class="chatSide"><small>${escapeHtml(c.time||'')}</small>${c.unread?`<span class="unread">${c.unread}</span>`:''}${c.group&&c.messageCount?`<span class="unread">${c.messageCount}</span>`:''}</div></div>`}).join('')||'<div class="empty">No chats yet.<br>Tap + to start a new chat.</div>';
+}
+
+/* Contact info/profile uses username instead of phone. */
+function openContactInfo(c){
+  const person=c==='current'?{id:fbUser?.uid,name:fbUserProfile?.displayName||'You',username:fbUserProfile?.username,photoURL:fbUserProfile?.photoURL,online:true}:c;
+  if(!person)return;
+  const shared=chats.filter(g=>g.group&&(g.memberIds||[]).includes(person.id)&&(g.memberIds||[]).includes(fbUser?.uid));
+  const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');
+  pi.innerHTML=`<div class="pageHeader"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div><h2>Profile</h2><div style="color:#777;font-size:12px">Contact information</div></div><button class="iconBtn" onclick="openProfileEdit()"><svg viewBox="0 0 24 24"><path d="m4 17.5-.5 3 3-.5L19 7.5 16.5 5zM14.5 7 17 9.5"/></svg></button></div><div class="pageCard profileHero"><div class="profileAvatarBig">${person.photoURL?`<img src="${escapeHtml(person.photoURL)}">`:escapeHtml((person.name||person.username||'U')[0].toUpperCase())}</div><h2>${escapeHtml(person.name||'User')}</h2><div class="profileUsernameBadge">@${escapeHtml(person.username||'unknown')}</div><small style="color:#888;margin-top:5px">${person.online?'Online':'Offline'}</small></div><div class="pageCard profileActions"><button class="secondary" onclick="startChatWithUser('${person.id}')">Message</button><button class="secondary" onclick="startVoiceCall()">Audio call</button></div><div class="pageCard"><b>Groups in common</b>${shared.length?shared.map(g=>`<div class="memberRow" onclick="openChat('${g.id}')"><div class="miniAvatar">${escapeHtml(g.initial)}</div><div><b>${escapeHtml(g.name)}</b><small>${(g.memberIds||[]).length} members</small></div></div>`).join(''):'<div style="color:#777;padding-top:10px">No groups in common</div>'}</div><button class="secondary" onclick="clearChatFor('${person.id}')">Clear chat</button><button class="secondary danger" onclick="blockContact('${person.id}')">Block</button><button class="secondary danger" onclick="toast('Report submitted')">Report</button>`;
+  pv.classList.add('show');
+}
+
+async function openProfileEdit(){
+  if(!fbUser)return;
+  const p=fbUserProfile||{};const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');
+  pi.innerHTML=`<div class="pageHeader"><button class="pageBack" onclick="openProfilePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div><h2>Edit profile</h2><div style="color:#777;font-size:12px">Update your KP WhatsApp profile</div></div></div><div class="pageCard profileHero"><div class="profileAvatarBig" id="editAvatarPreview">${p.photoURL?`<img src="${escapeHtml(p.photoURL)}">`:escapeHtml((p.displayName||p.username||'U')[0].toUpperCase())}</div><div class="profilePhotoTools"><label class="secondary uploadBtn">Upload photo<input type="file" accept="image/*" hidden onchange="uploadProfilePhoto(this.files[0])"></label><button class="secondary" onclick="removeProfilePhoto()">Remove</button></div></div><div class="pageCard profileEditGrid"><label class="authLabel">Username<input class="field" value="@${escapeHtml(p.username||'')}" disabled></label><label class="authLabel">First name<input class="field" id="editProfileFirst" value="${escapeHtml(p.firstName||'')}"></label><label class="authLabel">Last name<input class="field" id="editProfileLast" value="${escapeHtml(p.lastName||'')}"></label><label class="authLabel">Bio<textarea class="callNote" id="editProfileBio" placeholder="About you">${escapeHtml(p.bio||'')}</textarea></label><button class="primary" onclick="saveProfileEdits()">Save changes</button></div>`;
+  pv.classList.add('show');
+}
+async function uploadProfilePhoto(file){
+  if(!file||!fbUser)return;
+  try{toast('Uploading photo…');const up=await cloudinaryUpload(file);await fbDb.collection('users').doc(fbUser.uid).set({photoURL:up.secure_url,avatarType:'photo',updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});fbUserProfile={...(fbUserProfile||{}),photoURL:up.secure_url,avatarType:'photo'};openProfileEdit();toast('Profile photo updated')}catch(e){console.error(e);toast('Photo upload failed')}
+}
+async function removeProfilePhoto(){
+  if(!fbUser)return;try{await fbDb.collection('users').doc(fbUser.uid).set({photoURL:'',avatarType:'initial',updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});fbUserProfile={...(fbUserProfile||{}),photoURL:'',avatarType:'initial'};openProfileEdit();}catch(e){toast('Could not remove photo')}
+}
+async function saveProfileEdits(){
+  if(!fbUser)return;const f=document.getElementById('editProfileFirst')?.value.trim()||'';const l=document.getElementById('editProfileLast')?.value.trim()||'';const bio=document.getElementById('editProfileBio')?.value.trim()||'';const displayName=(f+' '+l).trim()||fbUserProfile?.displayName||'KP User';
+  try{await fbDb.collection('users').doc(fbUser.uid).set({firstName:f,lastName:l,displayName,bio,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});fbUserProfile={...(fbUserProfile||{}),firstName:f,lastName:l,displayName,bio};renderChats();openProfilePage();toast('Profile saved')}catch(e){console.error(e);toast('Could not save profile')}
+}
+function openProfilePage(){
+  const p=fbUserProfile||{};const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');
+  pi.innerHTML=`<div class="pageHeader"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div><h2>Profile</h2><div style="color:#777;font-size:12px">Your KP WhatsApp profile</div></div></div><div class="pageCard profileHero"><div class="profileAvatarBig">${p.photoURL?`<img src="${escapeHtml(p.photoURL)}">`:escapeHtml((p.displayName||p.username||'U')[0].toUpperCase())}</div><h2>${escapeHtml(p.displayName||'KP User')}</h2><div class="profileUsernameBadge">@${escapeHtml(p.username||'')}</div><div style="color:#888;margin-top:8px">${escapeHtml(p.bio||'No bio yet')}</div></div><div class="pageCard profileActions"><button class="primary" onclick="openProfileEdit()">Edit profile</button><button class="secondary" onclick="openPage('settings')">Settings</button></div><div class="pageCard"><b>Account</b><div style="color:#777;margin-top:8px">Username login enabled</div><div style="color:#777;margin-top:4px">Phone numbers are not used by KP WhatsApp.</div></div>`;pv.classList.add('show');
+}
+
+function openCallsPage(){
+  const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');
+  pi.innerHTML=`<div class="pageHeader"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div><h2>Calls</h2><div style="color:#777;font-size:12px">Voice calls · username lookup</div></div></div><div class="pageCard"><label class="authLabel">Call a user</label><div class="callUserSearch"><input id="callUsernameInput" class="field" placeholder="Enter username (e.g. sinan_07)"></div><button class="primary" onclick="callByUsername()">Find & Call</button><div id="callLookupResult" class="callResult"></div></div><div class="pageCard"><b>Recent calls</b><div id="callHistory"><div style="color:#777;padding-top:10px">Loading…</div></div></div>`;pv.classList.add('show');loadCallHistory();
+}
+async function callByUsername(){
+  const username=kpUsername(document.getElementById('callUsernameInput')?.value);const out=document.getElementById('callLookupResult');
+  if(!KP_USERNAME_RE.test(username)){if(out)out.innerHTML='<div style="color:#ff6878">Enter a valid username.</div>';return}
+  try{const s=await fbDb.collection('usernames').doc(username).get();if(!s.exists){if(out)out.innerHTML='<div style="color:#ff6878">No user found with that username.</div>';return}const u=(await fbDb.collection('users').doc(s.data().uid).get()).data();if(!u||u.uid===fbUser.uid){if(out)out.innerHTML='<div style="color:#ff6878">That username is not available for calling.</div>';return}await startChatWithUser(u.uid);setTimeout(()=>{current={...current,peerId:u.peerId||'',otherUid:u.uid,name:u.displayName||username,username};startVoiceCall()},250)}catch(e){console.error(e);if(out)out.innerHTML='<div style="color:#ff6878">Could not find this user.</div>'}
+}
+async function logCall(status){if(!fbUser||!current?.otherUid)return;try{await fbDb.collection('calls').add({callerId:fbUser.uid,receiverId:current.otherUid,participants:[fbUser.uid,current.otherUid],type:'voice',status,createdAt:firebase.firestore.FieldValue.serverTimestamp(),otherName:current.name,otherUsername:current.username||''})}catch(e){console.warn(e)}}
+async function loadCallHistory(){const box=document.getElementById('callHistory');if(!box||!fbUser)return;try{const snap=await fbDb.collection('calls').where('participants','array-contains',fbUser.uid).limit(20).get();box.innerHTML=snap.docs.map(d=>{const c=d.data();return `<div class="memberRow"><div class="miniAvatar">☎</div><div style="flex:1"><b>${escapeHtml(c.otherName||'Unknown user')}</b><small>@${escapeHtml(c.otherUsername||'unknown')} · ${escapeHtml(c.status||'call')}</small></div></div>`}).join('')||'<div style="color:#777;padding-top:10px">No calls yet.</div>'}catch(e){box.innerHTML='<div style="color:#777;padding-top:10px">No call history yet.</div>'}}
+
+function openPage(type,extra=null){
+  if(type==='calls'){openCallsPage();return}
+  if(type==='profile'){openProfilePage();return}
+  if(type==='settings'){
+    const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');
+    pi.innerHTML=`<div class="pageHeader"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div><h2>Settings</h2><div style="color:#777;font-size:12px">KP WhatsApp</div></div></div><div class="pageCard pageList" onclick="openProfilePage()"><div class="pageIcon">◎</div><div><b>Profile</b><div style="color:#777;font-size:12px">Photo, name, username and bio</div></div></div><div class="pageCard pageList" onclick="toast('Privacy settings are ready for the next section')"><div class="pageIcon">⌾</div><div><b>Privacy</b><div style="color:#777;font-size:12px">Profile visibility and read receipts</div></div></div><div class="pageCard pageList" onclick="toast('Notification settings are ready for the next section')"><div class="pageIcon">♢</div><div><b>Notifications</b><div style="color:#777;font-size:12px">Messages and calls</div></div></div><div class="pageCard"><b>Account</b><div style="color:#777;font-size:12px;margin-top:5px">@${escapeHtml(fbUserProfile?.username||'')}</div><button class="secondary" style="margin-top:10px" onclick="firebaseLogout()">Sign out</button><button class="secondary accountDanger" onclick="deleteMyAccount()">Delete account</button></div>`;pv.classList.add('show');return
+  }
+  if(window.__oldOpenPage) return window.__oldOpenPage(type,extra);
+}
+
+function nav(btn,type){
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));btn?.classList.add('active');
+  if(type==='chats'){closePage();closeChat();return}
+  if(type==='calls'){openCallsPage();return}
+  if(type==='profile'){openProfilePage();return}
+  if(type==='status'){openPage('status');return}
+}
+
+function closePage(){document.getElementById('pageView')?.classList.remove('show')}
+
+async function deleteMyAccount(){
+  if(!fbUser)return;const ok=confirm('Delete your KP WhatsApp account?');if(!ok)return;
+  try{
+    const uid=fbUser.uid,username=fbUserProfile?.username;
+    if(username)await fbDb.collection('usernames').doc(username).delete().catch(()=>{});
+    await fbDb.collection('users').doc(uid).delete();
+    await fbUser.delete();
+    location.reload();
+  }catch(e){console.error(e);toast('For security, sign in again and retry account deletion.')}
+}
+
+function startVoiceCall(){
+  if(!current||current.group){toast('Voice calls are 1-on-1 only');return}
+  const rid=current.peerId||current.recipientPeerId;if(!rid){toast('This user is not online for voice calling yet.');return}
+  if(!peer||!peer.open){toast('Voice calling is still connecting…');return}
+  showCallModal('outgoing',current.name,current.initial||'A');
+  ensureLocalAudio().then(stream=>{localStream=stream;activeCall=peer.call(rid,stream,{metadata:{uid:fbUser.uid,name:fbUserProfile?.displayName||'KP User',username:fbUserProfile?.username||'',peerId}});if(!activeCall)throw new Error('Call failed');bindCall(activeCall,current.name,current.initial||'A');logCall('calling')}).catch(e=>{console.error(e);stopLocalStream();hideCallModal();toast('Could not start voice call')})
+}
+function handleIncomingCall(call){if(activeCall||incomingCall){try{call.close()}catch(e){}return}incomingCall=call;const meta=call.metadata||{};const callerName=meta.name||'Incoming caller';showCallModal('incoming',callerName,(callerName[0]||'U').toUpperCase());document.getElementById('callPeer').textContent=meta.username?'@'+meta.username:'';playRingtone()}
+
+/* Keep current user profile synced after Firebase auth. */
+if(typeof fbAuth!=='undefined'&&fbAuth){fbAuth.onAuthStateChanged(async user=>{
+  fbUser=user||null;
+  if(!user){document.getElementById('authGate')?.classList.remove('hidden');document.getElementById('app')?.classList.add('authLocked');return}
+  try{const snap=await fbDb.collection('users').doc(user.uid).get();if(!snap.exists){authBackToLogin();return}fbUserProfile=snap.data();document.getElementById('authGate')?.classList.add('hidden');document.getElementById('app')?.classList.remove('authLocked');removeLegacyAuthNodes();await startFirebasePresence();initPeer();await loadFirebaseChats();renderChats()}catch(e){console.error(e);toast('Could not load your profile')}
+});}
+setTimeout(removeLegacyAuthNodes,250);
 
 </script>
 </body>
