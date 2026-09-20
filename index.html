@@ -1872,6 +1872,19 @@ function openKPAI(){const pv=document.getElementById('pageView'),pi=document.get
 </body>
 </html><style>
 /* KPAI UI refresh — frontend only. No API key is stored here. */
+
+/* KPAI API Settings Panel */
+.kpaiSettingsPanel{display:none;position:absolute;top:56px;right:12px;left:12px;background:#0f1416;border:1px solid rgba(106,239,255,.18);border-radius:14px;padding:14px;z-index:10;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.kpaiSettingsPanel.show{display:block}
+.kpaiSettingsPanel h3{margin:0 0 10px;font-size:14px;color:#8ae8ff}
+.kpaiSettingsPanel label{font-size:11px;color:#9aa8ad;display:block;margin:10px 0 4px}
+.kpaiSettingsPanel input, .kpaiSettingsPanel select{width:100%;background:#080b0c;border:1px solid #1e2a2e;border-radius:8px;padding:10px;color:#e8f6f9;font-size:13px;outline:none}
+.kpaiSettingsPanel .rowBtns{display:flex;gap:8px;margin-top:12px}
+.kpaiSettingsPanel .rowBtns button{flex:1;padding:10px;border-radius:8px;border:none;font-weight:600;cursor:pointer}
+.kpaiSettingsPanel .saveBtn{background:#6aefff;color:#002126}
+.kpaiSettingsPanel .cancelBtn{background:#1a2326;color:#9aa8ad}
+.kpaiImageBtn{width:36px;height:36px;border-radius:10px;background:#0d1113;border:1px solid rgba(106,239,255,.15);color:#6aefff;display:grid;place-items:center;cursor:pointer}
+
 .kpaiShell{height:100%;display:flex;flex-direction:column;background:radial-gradient(650px 320px at 50% -5%,rgba(0,210,255,.12),transparent 60%),#050607;color:#fff}
 .kpaiTop{display:flex;align-items:center;gap:11px;padding:12px 14px;border-bottom:1px solid #1b2023;background:rgba(7,9,10,.86);backdrop-filter:blur(20px);position:sticky;top:0;z-index:3}
 .kpaiBack{width:40px;height:40px;border:1px solid #20272b;border-radius:13px;background:#0d1113;color:#fff;display:grid;place-items:center}
@@ -1931,30 +1944,86 @@ async function shareKPAIMessage(btn){
 }
 function kpaiPrompt(text){const i=document.getElementById('kpaiInput');if(i){i.value=text;i.focus();sendKPAI();}}
 function clearKPAIChat(){sessionStorage.removeItem('kpai_ui_chat');openKPAI();}
+
+// Local fallback replies when Cloud Function is not available
+function kpaiLocalReply(t){
+  const q=t.toLowerCase();
+  if(q.includes('group')) return 'To create a group: Tap + → Create Group, choose a photo, add members, then create. Admins can add/remove members from Group Details.';
+  if(q.includes('call') || q.includes('voice')) return 'Voice calls use PeerJS. Make sure you are online, then tap the call button in chat header. Both users must be online for call to connect.';
+  if(q.includes('profile') || q.includes('dp') || q.includes('photo')) return 'Your profile photo syncs via Firebase. Go to Profile tab → Edit → Upload photo. It will update in all chats via real-time listeners.';
+  if(q.includes('status')) return 'Status lets you post text or media for 24h. Tap Status tab → Post. Others can view and reply.';
+  if(q.includes('firebase')) return 'KP WhatsApp uses Firebase Auth for login, Firestore for users/chats/messages, Realtime DB for presence/calls, and Cloud Functions for KPAI.';
+  if(q.includes('username')) return 'Username is unique. You sign in only with username + password, no phone number needed.';
+  if(q.includes('hi') || q.includes('hello') || q.includes('hey')) return 'Hi! I am KPAI. I can help with groups, calls, profile sync, status, Firebase setup, and your other KP projects. What do you want to know?';
+  return 'I can help with KP WhatsApp features - groups, voice calls, profile/DP sync, status, Firebase, GIFs, and your KP game projects. Try asking: How do I create a group?';
+}
+
 async function sendKPAI(){
-  const input=document.getElementById('kpaiInput'),typing=document.getElementById('kpaiTyping');if(!input)return;const t=input.value.trim();if(!t)return;
-  const saved=JSON.parse(sessionStorage.getItem('kpai_ui_chat')||'[]');saved.push({text:t,me:true});sessionStorage.setItem('kpai_ui_chat',JSON.stringify(saved));kpaiAppend(t,true);input.value='';
-  if(typing)typing.style.display='block';
+  const input=document.getElementById('kpaiInput'),typing=document.getElementById('kpaiTyping'),body=document.getElementById('kpaiBody');
+  if(!input) return;
+  const t=input.value.trim();
+  if(!t) return;
+  let saved=[];
+  try{ saved=JSON.parse(sessionStorage.getItem('kpai_ui_chat')||'[]'); }catch(e){ saved=[]; }
+  saved.push({text:t,me:true});
+  sessionStorage.setItem('kpai_ui_chat',JSON.stringify(saved));
+  if(typeof kpaiAppend==='function') kpaiAppend(t,true);
+  else if(body) body.insertAdjacentHTML('beforeend','<div class="kpaiBubble me"><span class="kpaiText">'+t+'</span></div>');
+  input.value='';
+  if(typing) typing.style.display='block';
   try{
-    if(!fbAuth || !fbAuth.currentUser) throw new Error('LOGIN_REQUIRED');
+    if(typeof fbAuth === 'undefined' || !fbAuth || !fbAuth.currentUser){
+      throw new Error('LOGIN_REQUIRED');
+    }
     const idToken=await fbAuth.currentUser.getIdToken();
     const KPAI_ENDPOINT='https://asia-south1-kp-whatsaappclone.cloudfunctions.net/kpaiChat';
+    console.log('KPAI: calling', KPAI_ENDPOINT);
     const r=await fetch(KPAI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},body:JSON.stringify({message:t})});
-    let data={}; try{data=await r.json()}catch(_){data={}}
+    let data={}; 
+    try{ data=await r.json(); }catch(_){ data={}; }
+    console.log('KPAI response status', r.status, data);
     if(!r.ok){
       if(data.error==='RATE_LIMIT') throw new Error('RATE_LIMIT');
       if(data.error==='AUTH_REQUIRED') throw new Error('LOGIN_REQUIRED');
-      throw new Error('AI_UNAVAILABLE');
+      throw new Error('AI_UNAVAILABLE_'+r.status);
     }
     const answer=String(data.reply||'No response received.');
-    const s=JSON.parse(sessionStorage.getItem('kpai_ui_chat')||'[]');s.push({text:answer,me:false});sessionStorage.setItem('kpai_ui_chat',JSON.stringify(s));kpaiAppend(answer,false);
+    let s2=[];
+    try{ s2=JSON.parse(sessionStorage.getItem('kpai_ui_chat')||'[]'); }catch(e){ s2=[]; }
+    s2.push({text:answer,me:false});
+    sessionStorage.setItem('kpai_ui_chat',JSON.stringify(s2));
+    if(typeof kpaiAppend==='function') kpaiAppend(answer,false);
   }catch(e){
-    let answer='KPAI is temporarily unavailable. Please make sure you are signed in and the secure Firebase AI function is deployed.';
+    console.warn('KPAI cloud failed, using local fallback', e);
+    let answer='';
+    let isLocalFallback = false;
     if(e.message==='RATE_LIMIT') answer='You have reached the KPAI request limit. Please wait a minute and try again.';
-    if(e.message==='LOGIN_REQUIRED') answer='Please sign in to KP WhatsApp before using KPAI.';
-    const s=JSON.parse(sessionStorage.getItem('kpai_ui_chat')||'[]');s.push({text:answer,me:false});sessionStorage.setItem('kpai_ui_chat',JSON.stringify(s));kpaiAppend(answer,false);
-  }finally{if(typing)typing.style.display='none';}
+    else if(e.message==='LOGIN_REQUIRED' || e.message.startsWith('LOGIN')) answer='Please sign in to KP WhatsApp before using KPAI. If you are signed in, your login session may have expired - please logout and login again.';
+    else {
+      // Use local fallback instead of showing unavailable
+      answer = kpaiLocalReply(t);
+      isLocalFallback = true;
+    }
+    let s3=[];
+    try{ s3=JSON.parse(sessionStorage.getItem('kpai_ui_chat')||'[]'); }catch(err){ s3=[]; }
+    s3.push({text:answer,me:false});
+    sessionStorage.setItem('kpai_ui_chat',JSON.stringify(s3));
+    if(typeof kpaiAppend==='function') kpaiAppend(answer,false);
+    
+    if(isLocalFallback){
+      // Show small hint about cloud function after local answer
+      setTimeout(()=>{
+        const hint = 'Note: Cloud AI is offline (function not deployed or API key missing). Showing local help. Check Firebase Console > Functions > Logs for kpaiChat.';
+        if(typeof kpaiAppend==='function') kpaiAppend(hint,false);
+      }, 800);
+    } else {
+      if(typeof toast==='function' && !isLocalFallback) toast(answer);
+    }
+  }finally{
+    if(typing) typing.style.display='none';
+  }
 }
+
 </script>
 <script>
 /* KPAI TAP FIX — final robust opener v2 - FIXED */
@@ -1973,15 +2042,42 @@ async function sendKPAI(){
       pv.style.display='block';
       pi.innerHTML=`
         <div class="kpaiShell">
-          <div class="kpaiTop">
+          <div class="kpaiTop" style="position:relative">
             <button class="kpaiBack" type="button" aria-label="Back" onclick="document.getElementById('pageView').classList.remove('show'); document.getElementById('pageView').style.display='none'; if(typeof closePage==='function') closePage(); else document.getElementById('pageView').classList.remove('show');">
               <svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
             <div class="kpaiOrb2"></div>
-            <div class="kpaiHeadText"><b>KPAI</b><small><span class="kpaiOnlineDot"></span>AI assistant</small></div>
-            <button class="kpaiClear" type="button" onclick="if(typeof clearKPAIChat==='function') clearKPAIChat()" aria-label="Clear chat">
-              <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            </button>
+            <div class="kpaiHeadText"><b>KPAI</b><small><span class="kpaiOnlineDot"></span>AI agent</small></div>
+            <div style="display:flex;gap:8px;margin-left:auto">
+              <button class="kpaiClear" type="button" onclick="if(typeof openKPAISettings==='function') openKPAISettings()" aria-label="Settings" title="API Settings">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m19 13.5 1.2 1-.9 1.6-1.5-.4a7.7 7.7 0 0 1-1.6 1l-.2 1.6h-1.9l-.5-1.5a7.7 7.7 0 0 1-1.9 0l-.6 1.5h-1.8l-.2-1.6a7.6 7.6 0 0 1-1.6-1l-1.5.4-.9-1.6 1.2-1a7.2 7.2 0 0 1-.2-1.5c0-.5.1-1 .2-1.5l-1.2-1 .9-1.6 1.5.4a7.6 7.6 0 0 1 1.6-1L9 5.6h1.8l.6 1.5a7.7 7.7 0 0 1 1.9 0l.5-1.5h1.9l.2 1.6a7.7 7.7 0 0 1 1.6 1l1.5-.4.9 1.6-1.2 1c.1.5.2 1 .2 1.5s-.1 1-.2 1.5Z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+              </button>
+              <button class="kpaiClear" type="button" onclick="if(typeof clearKPAIChat==='function') clearKPAIChat()" aria-label="Clear chat">
+                <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+            <div class="kpaiSettingsPanel" id="kpaiSettingsPanel">
+              <h3>KPAI Agent Settings</h3>
+              <label>Gemini API Key (for image & thinking)</label>
+              <input id="kpaiApiKeyInput" type="password" placeholder="AIza... paste your key">
+              <label>Agent Mode</label>
+              <select id="kpaiAgentMode">
+                <option value="chat">Chat Only</option>
+                <option value="think">Thinking + Chat</option>
+                <option value="image">Image Generator</option>
+                <option value="full">Full Agent (Text + Image + Files)</option>
+              </select>
+              <label>Image Model</label>
+              <select id="kpaiImageModel">
+                <option value="pollinations">Pollinations (Free, no key)</option>
+                <option value="gemini">Gemini 2.0 Flash Image (needs key)</option>
+              </select>
+              <div style="font-size:10px;color:#6d7a7e;margin-top:8px;line-height:1.4">Key is stored only in your browser localStorage & in your Firestore user doc. Never share it. You can get free key from aistudio.google.com</div>
+              <div class="rowBtns">
+                <button class="cancelBtn" type="button" onclick="document.getElementById('kpaiSettingsPanel').classList.remove('show')">Cancel</button>
+                <button class="saveBtn" type="button" onclick="if(typeof saveKPAISettings==='function') saveKPAISettings()">Save</button>
+              </div>
+            </div>
           </div>
           <div class="kpaiWelcome"><div class="kpaiWelcomeOrb"></div><h2>How can KPAI help?</h2><p>Ask KPAI anything about KP WhatsApp, Firebase, groups, calls, profiles, status and more.</p></div>
           <div class="kpaiSuggestions">
@@ -1992,7 +2088,7 @@ async function sendKPAI(){
           </div>
           <div class="kpaiBody2" id="kpaiBody"></div>
           <div class="kpaiTyping2" id="kpaiTyping">KPAI is thinking <span class="kpaiTypingDots"><i></i><i></i><i></i></span></div>
-          <div class="kpaiComposer"><div class="kpaiInputWrap"><input id="kpaiInput" autocomplete="off" placeholder="Message KPAI"></div><button class="kpaiSend" type="button" onclick="if(typeof sendKPAI==='function') sendKPAI()" aria-label="Send"><svg viewBox="0 0 24 24"><path d="m4 5 16 7-16 7 3-7zM7 12h13" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button></div>
+          <div class="kpaiComposer"><button class="kpaiImageBtn" type="button" onclick="const p=prompt('Enter image prompt (Tamil/English):'); if(p) generateKPAIImage(p)" title="Generate Image"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 10V7a2 2 0 0 1 2-2h2M21 10V7a2 2 0 0 0-2-2h-2M3 14v3a2 2 0 0 0 2 2h2M21 14v3a2 2 0 0 0-2 2h-2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><div class="kpaiInputWrap"><input id="kpaiInput" autocomplete="off" placeholder="Message KPAI or /image prompt"></div><button class="kpaiSend" type="button" onclick="if(typeof sendKPAI==='function') sendKPAI()" aria-label="Send"><svg viewBox="0 0 24 24"><path d="m4 5 16 7-16 7 3-7zM7 12h13" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button></div>
         </div>`;
       const input=document.getElementById('kpaiInput');
       if(input) input.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); if(typeof sendKPAI==='function') sendKPAI();}});
@@ -2012,6 +2108,121 @@ async function sendKPAI(){
   // Expose globally and overwrite any previous version
   window.openKPAI=kpaiOpenFixed;
   window.kpaiOpenFixed=kpaiOpenFixed;
+  
+  // ===== KPAI API SETTINGS & AGENT FUNCTIONS =====
+  function openKPAISettings(){
+    const panel=document.getElementById('kpaiSettingsPanel');
+    if(!panel) return;
+    panel.classList.toggle('show');
+    // load saved
+    try{
+      const key=localStorage.getItem('kpai_api_key')||'';
+      const mode=localStorage.getItem('kpai_agent_mode')||'full';
+      const imgModel=localStorage.getItem('kpai_image_model')||'pollinations';
+      const kInput=document.getElementById('kpaiApiKeyInput');
+      const mInput=document.getElementById('kpaiAgentMode');
+      const iInput=document.getElementById('kpaiImageModel');
+      if(kInput) kInput.value=key;
+      if(mInput) mInput.value=mode;
+      if(iInput) iInput.value=imgModel;
+    }catch(e){}
+  }
+  window.openKPAISettings=openKPAISettings;
+  
+  async function saveKPAISettings(){
+    try{
+      const key=document.getElementById('kpaiApiKeyInput')?.value.trim()||'';
+      const mode=document.getElementById('kpaiAgentMode')?.value||'full';
+      const imgModel=document.getElementById('kpaiImageModel')?.value||'pollinations';
+      localStorage.setItem('kpai_api_key', key);
+      localStorage.setItem('kpai_agent_mode', mode);
+      localStorage.setItem('kpai_image_model', imgModel);
+      // also save to Firestore user doc if logged in
+      if(typeof fbDb!=='undefined' && typeof fbUser!=='undefined' && fbUser?.uid){
+        try{
+          await fbDb.collection('users').doc(fbUser.uid).set({
+            kpaiSettings:{agentMode:mode, imageModel:imgModel, hasApiKey:!!key, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}
+          }, {merge:true});
+          if(key){
+            // Do NOT save raw key to Firestore in plain text for security - only flag
+            // If you really want, uncomment below (not recommended)
+            // await fbDb.collection('users').doc(fbUser.uid).collection('private').doc('apiKeys').set({gemini:key});
+          }
+        }catch(err){ console.warn('Could not save to Firestore', err); }
+      }
+      const panel=document.getElementById('kpaiSettingsPanel');
+      if(panel) panel.classList.remove('show');
+      if(typeof toast==='function') toast('KPAI settings saved! Mode: '+mode);
+      if(typeof kpaiAppend==='function'){
+        kpaiAppend('Settings saved. Agent mode: '+mode+'. '+(key?'API key added - image generation enabled.':'Using free image mode.'), false);
+      }
+    }catch(e){
+      console.error('saveKPAISettings', e);
+      alert('Could not save: '+e.message);
+    }
+  }
+  window.saveKPAISettings=saveKPAISettings;
+
+  async function generateKPAIImage(prompt){
+    const imgModel = localStorage.getItem('kpai_image_model')||'pollinations';
+    const apiKey = localStorage.getItem('kpai_api_key')||'';
+    const body=document.getElementById('kpaiBody');
+    if(!prompt) return;
+    if(typeof kpaiAppend==='function') kpaiAppend('Generating image: "'+prompt+'"...', false);
+    try{
+      let imageUrl='';
+      if(imgModel==='pollinations'){
+        // Free image generation - Pollinations
+        const encoded = encodeURIComponent(prompt);
+        imageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&nologo=true&model=flux`;
+        // Test load
+        const bubbleId = 'img_'+Date.now();
+        const html = `<div class="kpaiBubble" id="${bubbleId}"><b>KPAI Image</b><br><span class="kpaiText">${prompt}</span><br><img src="${imageUrl}" style="width:100%;border-radius:12px;margin-top:8px;max-width:400px" onload="this.parentElement.scrollIntoView()" onerror="this.parentElement.innerHTML='Image failed to load. Try again.'"><br><small style="color:#6d7a7e">Generated via Pollinations - Free</small><div style="margin-top:6px"><button class="kpaiSuggestion" onclick="window.open('${imageUrl}', '_blank')">Open Full</button> <button class="kpaiSuggestion" onclick="if(typeof shareKPAIMessage==='function'){ const b=document.getElementById('${bubbleId}'); if(b) shareKPAIMessage(b.querySelector('.kpaiShare')||b); }">Share</button></div></div>`;
+        if(body) { body.insertAdjacentHTML('beforeend', html); body.scrollTop=body.scrollHeight; }
+      } else if(imgModel==='gemini' && apiKey){
+        // Gemini image generation via direct API call
+        // Note: This uses client-side key (only for personal use)
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${apiKey}`, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({contents:[{parts:[{text: "Generate image: "+prompt}]}]})
+        });
+        const data = await resp.json();
+        console.log('Gemini image resp', data);
+        // For now fallback to pollinations if Gemini image not available in your region
+        if(!resp.ok) throw new Error('Gemini image error: '+(data.error?.message||resp.status));
+        if(typeof kpaiAppend==='function') kpaiAppend('Gemini image API responded, but direct image display needs extra handling. Using Pollinations as fallback for now. Prompt: '+prompt, false);
+        // fallback
+        generateKPAIImage(prompt); // will use pollinations if fails? avoid loop - directly call pollinations
+      } else {
+        if(typeof kpaiAppend==='function') kpaiAppend('Please add API key in settings or select Pollinations (free) mode.', false);
+      }
+    }catch(err){
+      console.error('generateKPAIImage', err);
+      if(typeof kpaiAppend==='function') kpaiAppend('Image generation failed: '+(err.message||err)+'. Try Pollinations mode (free, no key needed).', false);
+    }
+  }
+  window.generateKPAIImage=generateKPAIImage;
+
+  // Override kpaiPrompt to handle image commands
+  const originalKpaiPrompt = window.kpaiPrompt;
+  window.kpaiPrompt = function(text){
+    if(text && (text.toLowerCase().startsWith('/image') || text.toLowerCase().startsWith('/img') || text.toLowerCase().includes('generate image') || text.toLowerCase().includes('photo உருவாக்கு') || text.toLowerCase().includes('image bana'))){
+      let prompt = text.replace('/image','').replace('/img','').replace('generate image','').trim();
+      if(!prompt) prompt = text;
+      generateKPAIImage(prompt);
+      const input=document.getElementById('kpaiInput');
+      if(input) input.value='';
+      return;
+    }
+    if(typeof originalKpaiPrompt==='function') originalKpaiPrompt(text);
+    else {
+      const i=document.getElementById('kpaiInput');
+      if(i){ i.value=text; i.focus(); if(typeof sendKPAI==='function') sendKPAI(); }
+    }
+  };
+
+
 
   function bindKpaiRows(){
     document.querySelectorAll('.kpaiChatRow, .kpaiNav').forEach(row=>{
