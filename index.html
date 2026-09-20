@@ -1950,3 +1950,67 @@ async function sendKPAI(){
   }finally{if(typing)typing.style.display='none';}
 }
 </script>
+<script>
+/* KPAI TAP FIX — final robust opener */
+(function(){
+  function kpaiOpenFixed(){
+    const pv=document.getElementById('pageView');
+    const pi=document.getElementById('pageInner');
+    if(!pv || !pi){
+      console.error('KPAI: page container not found');
+      return;
+    }
+    pv.classList.add('show');
+    pi.innerHTML=`
+      <div class="kpaiShell">
+        <div class="kpaiTop">
+          <button class="kpaiBack" type="button" aria-label="Back" onclick="document.getElementById('pageView').classList.remove('show')">
+            <svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>
+          </button>
+          <div class="kpaiOrb2"></div>
+          <div class="kpaiHeadText"><b>KPAI</b><small><span class="kpaiOnlineDot"></span>AI assistant</small></div>
+          <button class="kpaiClear" type="button" onclick="clearKPAIChat()" aria-label="Clear chat">
+            <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v6M14 11v6"/></svg>
+          </button>
+        </div>
+        <div class="kpaiWelcome"><div class="kpaiWelcomeOrb"></div><h2>How can KPAI help?</h2><p>Ask KPAI anything about KP WhatsApp, Firebase, groups, calls, profiles, status and more.</p></div>
+        <div class="kpaiSuggestions">
+          <button class="kpaiSuggestion" type="button" onclick="kpaiPrompt('How do I create a group?')">Create a group</button>
+          <button class="kpaiSuggestion" type="button" onclick="kpaiPrompt('How do voice calls work?')">Voice calls</button>
+          <button class="kpaiSuggestion" type="button" onclick="kpaiPrompt('How does my profile photo sync?')">Profile &amp; DP</button>
+          <button class="kpaiSuggestion" type="button" onclick="kpaiPrompt('How does Firebase work here?')">Firebase</button>
+        </div>
+        <div class="kpaiBody2" id="kpaiBody"></div>
+        <div class="kpaiTyping2" id="kpaiTyping">KPAI is thinking <span class="kpaiTypingDots"><i></i><i></i><i></i></span></div>
+        <div class="kpaiComposer"><div class="kpaiInputWrap"><input id="kpaiInput" autocomplete="off" placeholder="Message KPAI"></div><button class="kpaiSend" type="button" onclick="sendKPAI()" aria-label="Send"><svg viewBox="0 0 24 24"><path d="m4 5 16 7-16 7 3-7zM7 12h13"/></svg></button></div>
+      </div>`;
+    const input=document.getElementById('kpaiInput');
+    if(input) input.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendKPAI();}});
+    const saved=JSON.parse(sessionStorage.getItem('kpai_ui_chat')||'[]');
+    if(saved.length) saved.forEach(m=>kpaiAppend(m.text,!!m.me));
+    else kpaiAppend('Hi! I’m KPAI. What would you like to know?',false);
+    requestAnimationFrame(()=>input?.focus());
+  }
+  window.openKPAI=kpaiOpenFixed;
+
+  function bindKpaiRows(){
+    document.querySelectorAll('.kpaiChatRow').forEach(row=>{
+      if(row.dataset.kpaiBound==='1') return;
+      row.dataset.kpaiBound='1';
+      row.addEventListener('click',function(e){
+        if(e.target.closest('button,a,input,select,textarea')) return;
+        e.preventDefault(); e.stopPropagation(); kpaiOpenFixed();
+      },true);
+    });
+  }
+  function boot(){
+    bindKpaiRows();
+    const list=document.getElementById('chatList');
+    if(list && !list.dataset.kpaiObserver){
+      list.dataset.kpaiObserver='1';
+      new MutationObserver(bindKpaiRows).observe(list,{childList:true,subtree:true});
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+})();
+</script>
