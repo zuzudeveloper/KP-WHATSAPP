@@ -1870,13 +1870,13 @@ function openKPAI(){const pv=document.getElementById('pageView'),pi=document.get
 .kpaiClear{width:40px;height:40px;border:1px solid #20272b;border-radius:13px;background:#0d1113;color:#929ba0;display:grid;place-items:center}.kpaiClear svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .kpaiWelcome{padding:20px 16px 8px;text-align:center}.kpaiWelcomeOrb{width:70px;height:70px;margin:0 auto 12px;border-radius:24px;background:radial-gradient(circle at 35% 28%,#fff,#6cf7ff 22%,#6b72ff 53%,#11161b 74%);box-shadow:0 0 35px rgba(86,225,255,.25);animation:kpaiPulse2 2.2s ease-in-out infinite}.kpaiWelcome h2{font-size:20px;margin:0 0 5px}.kpaiWelcome p{margin:0 auto;color:#808b91;font-size:12px;line-height:1.5;max-width:330px}
 .kpaiSuggestions{display:flex;gap:8px;overflow:auto;padding:12px 14px 5px;scrollbar-width:none}.kpaiSuggestions::-webkit-scrollbar{display:none}.kpaiSuggestion{white-space:nowrap;border:1px solid #222b30;background:#0b1012;color:#cbd3d7;border-radius:999px;padding:9px 12px;font-size:11px;cursor:pointer}.kpaiSuggestion:active{transform:scale(.97);background:#11181b}
-.kpaiBody2{flex:1;overflow:auto;padding:12px 14px 18px;display:flex;flex-direction:column;gap:8px;scroll-behavior:smooth}.kpaiBubble{max-width:min(84%,440px);padding:10px 12px;border:1px solid #20272b;background:#101416;border-radius:6px 17px 17px 17px;font-size:13px;line-height:1.45;color:#e8edef;box-shadow:0 5px 20px rgba(0,0,0,.16)}.kpaiBubble.me{align-self:flex-end;background:#15200e;border-color:#31451c;border-radius:17px 6px 17px 17px}.kpaiBubble .kpaiMeta{display:block;margin-top:5px;color:#6f7b80;font-size:9px}.kpaiTyping2{display:none;align-self:flex-start;color:#70eaff;font-size:10px;padding:0 14px 7px}.kpaiTypingDots{display:inline-flex;gap:3px;vertical-align:middle;margin-left:4px}.kpaiTypingDots i{width:4px;height:4px;border-radius:50%;background:#70eaff;animation:kpaiDot 1s infinite}.kpaiTypingDots i:nth-child(2){animation-delay:.15s}.kpaiTypingDots i:nth-child(3){animation-delay:.3s}
+.kpaiBody2{flex:1;overflow:auto;padding:12px 14px 18px;display:flex;flex-direction:column;gap:8px;scroll-behavior:smooth}.kpaiBubble{max-width:min(84%,440px);padding:10px 12px;border:1px solid #20272b;background:#101416;border-radius:6px 17px 17px 17px;font-size:13px;line-height:1.45;color:#e8edef;box-shadow:0 5px 20px rgba(0,0,0,.16)}.kpaiBubble.me{align-self:flex-end;background:#15200e;border-color:#31451c;border-radius:17px 6px 17px 17px}.kpaiBubble{position:relative}.kpaiBubble .kpaiShare{display:flex;align-items:center;justify-content:center;position:absolute;right:7px;top:7px;width:27px;height:27px;border:1px solid #2a3338;border-radius:9px;background:#0a0e10;color:#aeb8bd;opacity:0;transition:.18s;cursor:pointer}.kpaiBubble:hover .kpaiShare,.kpaiBubble:focus-within .kpaiShare{opacity:1}.kpaiBubble.me .kpaiShare{background:#16220f;border-color:#33481e}.kpaiBubble .kpaiShare svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.kpaiBubble .kpaiMeta{display:block;margin-top:5px;color:#6f7b80;font-size:9px}.kpaiTyping2{display:none;align-self:flex-start;color:#70eaff;font-size:10px;padding:0 14px 7px}.kpaiTypingDots{display:inline-flex;gap:3px;vertical-align:middle;margin-left:4px}.kpaiTypingDots i{width:4px;height:4px;border-radius:50%;background:#70eaff;animation:kpaiDot 1s infinite}.kpaiTypingDots i:nth-child(2){animation-delay:.15s}.kpaiTypingDots i:nth-child(3){animation-delay:.3s}
 .kpaiComposer{padding:9px 10px calc(9px + env(safe-area-inset-bottom));border-top:1px solid #1b2023;background:rgba(7,9,10,.92);backdrop-filter:blur(20px);display:flex;gap:7px}.kpaiInputWrap{flex:1;display:flex;align-items:center;background:#0e1214;border:1px solid #242c30;border-radius:17px;padding:0 12px}.kpaiInputWrap input{width:100%;height:45px;background:none;border:0;outline:0;color:#fff;font-size:13px}.kpaiInputWrap input::placeholder{color:#626c71}.kpaiSend{width:45px;height:45px;border:0;border-radius:15px;background:linear-gradient(145deg,#8cff43,#b8ff22);color:#071000;display:grid;place-items:center;box-shadow:0 0 18px rgba(157,255,50,.18)}.kpaiSend svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 @keyframes kpaiOrbFloat{50%{transform:translateY(-3px) scale(1.035)}}@keyframes kpaiRing{to{transform:rotate(360deg)}}@keyframes kpaiPulse2{50%{transform:scale(1.045);filter:hue-rotate(10deg)}}@keyframes kpaiDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
 @media(min-width:760px){.kpaiWelcome{padding-top:28px}.kpaiBody2{padding-left:24px;padding-right:24px}.kpaiComposer{padding-left:18px;padding-right:18px}}
 </style>
 <script>
-/* KPAI UI-only override. Connect /api/kpai later; never place a Gemini key in this file. */
+/* KPAI secure frontend integration. Gemini API key is NEVER stored in this HTML. */
 function kpaiTimeNow(){return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});}
 function openKPAI(){
   const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');
@@ -1899,22 +1899,46 @@ function openKPAI(){
   const body=document.getElementById('kpaiBody');
   if(saved.length) saved.forEach(m=>kpaiAppend(m.text,m.me)); else kpaiAppend('Hi! I’m KPAI. What would you like to know?',false);
 }
-function kpaiAppend(text,me){const body=document.getElementById('kpaiBody');if(!body)return;const d=document.createElement('div');d.className='kpaiBubble'+(me?' me':'');d.innerHTML=escapeHtml(text)+'<span class="kpaiMeta">'+(me?'You':'KPAI')+' · '+kpaiTimeNow()+'</span>';body.appendChild(d);body.scrollTop=body.scrollHeight;}
+function kpaiAppend(text,me){const body=document.getElementById('kpaiBody');if(!body)return;const d=document.createElement('div');d.className='kpaiBubble'+(me?' me':'');d.innerHTML='<button class="kpaiShare" onclick="shareKPAIMessage(this)" aria-label="Share message" title="Share"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.5-4.3M8.2 13.2l7.5 4.3"/></svg></button><span class="kpaiText">'+escapeHtml(text)+'</span><span class="kpaiMeta">'+(me?'You':'KPAI')+' · '+kpaiTimeNow()+'</span>';d.dataset.shareText=text;body.appendChild(d);body.scrollTop=body.scrollHeight;}
+async function shareKPAIMessage(btn){
+  const bubble=btn?.closest('.kpaiBubble');
+  const text=bubble?.dataset?.shareText||bubble?.querySelector('.kpaiText')?.textContent||'';
+  if(!text)return;
+  try{
+    if(navigator.share){
+      await navigator.share({title:'KPAI message',text});
+    }else if(navigator.clipboard){
+      await navigator.clipboard.writeText(text);
+      if(typeof toast==='function') toast('Message copied to clipboard');
+    }else{
+      const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
+      if(typeof toast==='function') toast('Message copied to clipboard');
+    }
+  }catch(e){ if(e?.name!=='AbortError' && typeof toast==='function') toast('Share cancelled'); }
+}
 function kpaiPrompt(text){const i=document.getElementById('kpaiInput');if(i){i.value=text;i.focus();sendKPAI();}}
 function clearKPAIChat(){sessionStorage.removeItem('kpai_ui_chat');openKPAI();}
 async function sendKPAI(){
   const input=document.getElementById('kpaiInput'),typing=document.getElementById('kpaiTyping');if(!input)return;const t=input.value.trim();if(!t)return;
   const saved=JSON.parse(sessionStorage.getItem('kpai_ui_chat')||'[]');saved.push({text:t,me:true});sessionStorage.setItem('kpai_ui_chat',JSON.stringify(saved));kpaiAppend(t,true);input.value='';
   if(typing)typing.style.display='block';
-  /* UI-only fallback. Replace this request with your authenticated Firebase backend endpoint. */
   try{
-    const r=await fetch('/api/kpai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t})});
-    if(!r.ok)throw new Error('backend unavailable');
-    const data=await r.json();const answer=String(data.reply||'No response received.');
+    if(!fbAuth || !fbAuth.currentUser) throw new Error('LOGIN_REQUIRED');
+    const idToken=await fbAuth.currentUser.getIdToken();
+    const KPAI_ENDPOINT='https://asia-south1-kp-whatsaappclone.cloudfunctions.net/kpaiChat';
+    const r=await fetch(KPAI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},body:JSON.stringify({message:t})});
+    let data={}; try{data=await r.json()}catch(_){data={}}
+    if(!r.ok){
+      if(data.error==='RATE_LIMIT') throw new Error('RATE_LIMIT');
+      if(data.error==='AUTH_REQUIRED') throw new Error('LOGIN_REQUIRED');
+      throw new Error('AI_UNAVAILABLE');
+    }
+    const answer=String(data.reply||'No response received.');
     const s=JSON.parse(sessionStorage.getItem('kpai_ui_chat')||'[]');s.push({text:answer,me:false});sessionStorage.setItem('kpai_ui_chat',JSON.stringify(s));kpaiAppend(answer,false);
   }catch(e){
-    /* Keep UI usable until the secure backend is connected. */
-    const answer=kpaiReply(t);
+    let answer='KPAI is temporarily unavailable. Please make sure you are signed in and the secure Firebase AI function is deployed.';
+    if(e.message==='RATE_LIMIT') answer='You have reached the KPAI request limit. Please wait a minute and try again.';
+    if(e.message==='LOGIN_REQUIRED') answer='Please sign in to KP WhatsApp before using KPAI.';
     const s=JSON.parse(sessionStorage.getItem('kpai_ui_chat')||'[]');s.push({text:answer,me:false});sessionStorage.setItem('kpai_ui_chat',JSON.stringify(s));kpaiAppend(answer,false);
   }finally{if(typing)typing.style.display='none';}
 }
