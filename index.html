@@ -1714,7 +1714,7 @@ async function publishKPStatus(){const text=document.getElementById('statusTextI
 async function publishKPStatusFile(file){if(!file)return;try{toast('Uploading status…');const up=await cloudinaryUpload(file);await fbDb.collection('status').add({userId:fbUser.uid,username:fbUserProfile?.username||'',displayName:fbUserProfile?.displayName||'KP User',photoURL:fbUserProfile?.photoURL||'',type:file.type.startsWith('video/')?'video':'image',mediaURL:up.secure_url,createdAt:KPServerTS()});toast('Status posted');loadKPStatuses()}catch(e){console.error(e);toast('Could not post status')}}
 
 /* KPAI: local assistant UI with typing animation; no external AI key required. */
-function openKPAI(){const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');pv.classList.add('show');pi.innerHTML=`<div class="kpaiPage"><div class="kpaiHead"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="kpaiOrb"></div><div><h2 style="margin:0">KPAI</h2><div style="color:#69eaff;font-size:11px">KP AI Assistant · Online</div></div></div><div class="kpaiBody" id="kpaiBody"><div class="kpaiMsg"><b>KPAI</b><br>Hi! I’m KPAI. Ask me about KP WhatsApp, groups, calls, profiles, GIFs, status or your KP projects.</div></div><div class="kpaiTyping" id="kpaiTyping">KPAI is typing…</div><div class="kpaiInput"><input id="kpaiInput" placeholder="Message KPAI" onkeydown="if(event.key==='Enter')sendKPAI()"><button onclick="sendKPAI()">➤</button></div></div>`}
+function openKPAI(){const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');pv.classList.add('show');pi.innerHTML=`<div class="kpaiPage"><div class="kpaiHead"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="kpaiOrb"></div><div><h2 style="margin:0">KPAI</h2><div style="color:#69eaff;font-size:11px">KP AI Assistant · Online</div></div></div><div class="kpaiBody" id="kpaiBody"><div class="kpaiMsg"><b>KPAI</b><br>Hi! I’m KPAI. Ask me about KP WhatsApp, groups, calls, profiles, GIFs, status or your KP projects.</div></div><div class="kpaiTyping" id="kpaiTyping">KPAI is typing…</div><div class="kpaiInput"><input id="kpaiInput" placeholder="Message KPAI" onkeydown="if(event.key===&quot;Enter&quot;)sendKPAI()"><button onclick="sendKPAI()">➤</button></div></div>`}
 function kpaiReply(t){const q=t.toLowerCase();if(q.includes('group'))return 'To create a group, open + → Create Group, choose a photo or GIF, add real users, then create it. Group admins can add/remove members and edit group details.';if(q.includes('call'))return 'KP WhatsApp supports 1-to-1 voice calls. Open Calls, search a username, or use the call button inside a chat. Incoming calls show the caller profile photo.';if(q.includes('dp')||q.includes('profile')||q.includes('photo'))return 'Your profile photo is uploaded to Cloudinary and saved as photoURL in Firebase. The same DP can appear in chats, message avatars, groups, calls and profile screens.';if(q.includes('gif'))return 'Open the GIF picker to search reactions, moods, love, football and gaming GIFs. GIFs are kept compact in messages and the picker shows a loading animation.';if(q.includes('status'))return 'Status lets you post text or media and view recent updates in a horizontal scrolling row.';if(q.includes('firebase'))return 'Firebase Authentication handles the username login identity, Firestore stores users/chats/groups/messages, and Realtime Database handles presence/call state.';if(q.includes('game')||q.includes('gta')||q.includes('greek'))return 'KPAI can help you plan KP game features, UI, Firebase systems, maps, weapons, bots and performance ideas.';return 'I can help with KP WhatsApp features, Firebase, profiles, groups, voice calls, status, GIFs, or your KP game projects. Try asking “How do I create a group?”'}
 function sendKPAI(){const input=document.getElementById('kpaiInput'),body=document.getElementById('kpaiBody'),typing=document.getElementById('kpaiTyping');const t=input?.value.trim();if(!t)return;body.insertAdjacentHTML('beforeend',`<div class="kpaiMsg me">${escapeHtml(t)}</div>`);input.value='';body.scrollTop=body.scrollHeight;typing.style.display='block';setTimeout(()=>{typing.style.display='none';body.insertAdjacentHTML('beforeend',`<div class="kpaiMsg"><b>KPAI</b><br>${escapeHtml(kpaiReply(t))}</div>`);body.scrollTop=body.scrollHeight},650)}
 
@@ -1739,6 +1739,123 @@ startFirebaseMessageListener=function(c){
 
 /* Update incoming-call profile from metadata, including DP. */
 
+</script>
+
+<style id="kp-final-fixes">
+/* FINAL CHAT / DP / LOADING / STATUS / KPAI FIXES */
+.chatRow{grid-template-columns:50px minmax(0,1fr) 58px!important;min-height:72px!important;align-items:center!important;box-sizing:border-box!important}
+.chatRow>.avatar{width:50px!important;height:50px!important;min-width:50px!important;min-height:50px!important;aspect-ratio:1/1!important;border-radius:50%!important;overflow:hidden!important;display:grid!important;place-items:center!important}
+.chatRow>.avatar img{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center!important;display:block!important;border-radius:50%!important}
+.chatMeta{min-width:0!important;overflow:hidden!important}.chatSide{width:58px!important;min-width:58px!important;align-items:flex-end!important}
+.chatSide .unread{min-width:21px!important;height:21px!important;padding:0 6px!important;border-radius:999px!important;display:grid!important;place-items:center!important;font-size:10px!important}
+.chatLoadingOverlay{inset:0!important;z-index:40!important;display:none!important;align-items:center!important;justify-content:center!important;pointer-events:none!important}
+.chatLoadingOverlay.show{display:flex!important}.chatLoadingOverlay>div{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-width:110px!important}
+.kpSpinner{width:38px!important;height:38px!important;border-width:3px!important;box-sizing:border-box!important}.kpLoadingText{margin-top:11px!important;text-align:center!important}
+.kp-msg-avatar{width:27px!important;height:27px!important;min-width:27px!important;min-height:27px!important;border-radius:50%!important;overflow:hidden!important;display:grid!important;place-items:center!important;align-self:flex-end!important;margin-bottom:18px!important;background:#b8ff22!important;color:#071000!important;font-size:10px!important;font-weight:800!important}
+.kp-msg-avatar img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important;border-radius:50%!important;display:block!important}
+.kp-msg-line{display:flex!important;gap:7px!important;align-items:flex-end!important;max-width:100%!important}.kp-msg-line.me-line{justify-content:flex-end!important}
+.kp-msg-line .msg{max-width:min(78%,320px)!important}
+.statusViewer{position:fixed;inset:0;background:#020303;z-index:180;display:none;flex-direction:column;color:#fff}
+.statusViewer.show{display:flex}.statusProgress{display:flex;gap:4px;padding:8px 10px 4px}.statusProgress i{height:3px;flex:1;border-radius:99px;background:#333;overflow:hidden}.statusProgress i span{display:block;height:100%;width:0;background:#fff}.statusProgress i.done span{width:100%}
+.statusViewerHead{height:58px;display:flex;align-items:center;gap:10px;padding:4px 12px;position:relative;z-index:2}.statusViewerBack,.statusViewerMenu{width:40px;height:40px;border:0;border-radius:12px;background:#111b;color:#fff;display:grid;place-items:center}.statusViewerBack svg,.statusViewerMenu svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.statusViewerAvatar{width:38px;height:38px;border-radius:50%;overflow:hidden;background:#b8ff22;color:#071000;display:grid;place-items:center;font-weight:900;flex:none}.statusViewerAvatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}.statusViewerMeta{min-width:0;flex:1}.statusViewerMeta b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.statusViewerMeta small{display:block;color:#aaa;margin-top:2px;font-size:10px}.statusViewerBody{position:relative;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}.statusViewerBody img,.statusViewerBody video{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}.statusViewerText{font-size:25px;line-height:1.35;text-align:center;max-width:88%;word-break:break-word}.statusViewerBottom{padding:10px 12px calc(12px + env(safe-area-inset-bottom));display:flex;gap:8px;background:linear-gradient(transparent,#020303 25%)}.statusReplyInput{flex:1;height:46px;border:1px solid #303030;border-radius:18px;background:#121212;color:#fff;padding:0 14px;outline:none}.statusReplyBtn{width:48px;height:46px;border:0;border-radius:16px;background:#b8ff22;color:#071000;font-weight:900}.statusMenu{position:absolute;right:12px;top:58px;z-index:4;background:#151515;border:1px solid #333;border-radius:14px;overflow:hidden;display:none;min-width:155px;box-shadow:0 20px 50px #000}.statusMenu.show{display:block}.statusMenu button{display:block;width:100%;padding:13px 15px;border:0;background:none;color:#fff;text-align:left}.statusMenu button.danger{color:#ff6370}
+.statusItem{cursor:pointer}.statusItem:active{transform:scale(.97)}
+.kpaiPage{background:#050505!important}.kpaiHead{min-height:64px!important;padding:10px 12px!important}.kpaiBody{padding:14px!important;display:flex!important;flex-direction:column!important;gap:7px!important}.kpaiMsg{margin:0!important;max-width:82%!important;border-radius:17px!important}.kpaiMsg.me{align-self:flex-end!important}.kpaiMsg:not(.me){align-self:flex-start!important}.kpaiInput{padding:9px!important;background:#080808!important}.kpaiInput input{height:46px!important}.kpaiInput button{height:46px!important;width:46px!important}
+/* Conventional voice-call presentation */
+.callCard{background:linear-gradient(180deg,#101010,#050505)!important}.callCard:before{display:none!important}.callOrb{display:none!important}.callAvatar{width:96px!important;height:96px!important;margin:0 auto 16px!important;box-shadow:0 0 0 6px #ffffff0b!important}.callAvatar img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important}.callTitle{font-size:22px!important}.callSub{font-size:13px!important;color:#999!important}.callActions{margin-top:28px!important}
+</style>
+<div class="statusViewer" id="statusViewer" aria-hidden="true">
+  <div class="statusProgress" id="statusProgress"></div>
+  <div class="statusViewerHead">
+    <button class="statusViewerBack" onclick="closeStatusViewer()" aria-label="Back"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button>
+    <div class="statusViewerAvatar" id="statusViewerAvatar"></div>
+    <div class="statusViewerMeta"><b id="statusViewerName">Status</b><small id="statusViewerTime"></small></div>
+    <button class="statusViewerMenu" onclick="toggleStatusMenu()" aria-label="More"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg></button>
+  </div>
+  <div class="statusMenu" id="statusMenu"><button onclick="openStatusAuthorChat()">Message</button><button id="statusDeleteBtn" class="danger" onclick="deleteCurrentStatus()">Delete status</button></div>
+  <div class="statusViewerBody" id="statusViewerBody"></div>
+  <div class="statusViewerBottom"><input id="statusReplyInput" class="statusReplyInput" placeholder="Reply to status…" onkeydown="if(event.key==='Enter')replyToStatus()"><button class="statusReplyBtn" onclick="replyToStatus()">➤</button></div>
+</div>
+
+
+
+
+<script>
+/* FINAL FUNCTIONAL PATCH */
+async function markChatRead(c){
+  if(!fbUser||!c?.firestoreId)return;
+  c.unread=0; renderChats();
+  try{await fbDb.collection('chats').doc(c.firestoreId).set({['unreadCount.'+fbUser.uid]:0},{merge:true});}catch(e){console.warn('markChatRead',e)}
+}
+function closeChat(){
+  if(current){current.unread=0;renderChats();markChatRead(current).catch(()=>{});}
+  document.getElementById('app')?.classList.remove('chat-open');
+  document.getElementById('chatLoadingOverlay')?.classList.remove('show');
+}
+window.closeChat=closeChat;
+async function openChat(id){
+  const c=chats.find(x=>String(x.id)===String(id)); if(!c)return;
+  current=c;c.unread=0;renderChats();document.getElementById('app')?.classList.add('chat-open');
+  const ov=document.getElementById('chatLoadingOverlay');ov?.classList.add('show');
+  try{
+    if(!c.group&&c.otherUid)attachProfileListener(c);
+    await loadFirebaseMessages(c);
+    await markChatRead(c);
+    startFirebaseMessageListener(c);
+    renderMessages();renderChats();
+  }catch(e){console.error('openChat',e);toast('Could not open this chat: '+(e.code||e.message||'Firestore error'));}
+  finally{setTimeout(()=>document.getElementById('chatLoadingOverlay')?.classList.remove('show'),220);}
+}
+window.openChat=openChat;
+function renderChats(){
+ const list=document.getElementById('chatList');if(!list)return;
+ const q=(document.getElementById('search')?.value||'').toLowerCase().trim();
+ const arr=chats.filter(c=>(activeTab==='all'||(activeTab==='unread'&&Number(c.unread)>0)||(activeTab==='groups'&&c.group))&&(((c.name||'')+' '+(c.username||'')).toLowerCase().includes(q)));
+ arr.sort((a,b)=>(b.sortTime||0)-(a.sortTime||0));
+ list.innerHTML=arr.map(c=>{
+   const url=c.group?c.avatar:c.photoURL;
+   const av=url?'<div class="avatar green"><img src="'+escapeHtml(url)+'" alt=""></div>':'<div class="avatar green">'+escapeHtml(c.initial||'U')+'</div>';
+   const badge=Number(c.unread||0)>0?'<span class="unread">'+Number(c.unread||0)+'</span>':'';
+   const cid=String(c.id).replace(/'/g,"\\'");
+   return '<div class="chatRow '+(current?.id===c.id?'selected':'')+'" onclick="openChat(\''+cid+'\')">'+av+'<div class="chatMeta"><div class="chatName"><b>'+escapeHtml(c.name||'User')+'</b>'+(c.username&&!c.group?'<small>@'+escapeHtml(c.username)+'</small>':'')+'</div><div class="chatPreview">'+escapeHtml(c.preview||'No messages yet')+'</div></div><div class="chatSide"><small>'+escapeHtml(c.time||'')+'</small>'+badge+'</div></div>';
+ }).join('')||'<div class="empty">No chats yet.<br>Tap + to start a new chat.</div>';
+}
+window.renderChats=renderChats;
+
+/* Status viewer */
+let kpStatuses=[],kpStatusIndex=0,kpStatusTimer=null,kpStatusPaused=false,kpCurrentStatus=null;
+function statusDisplayDate(v){const d=v?.toDate?v.toDate():new Date(v||Date.now());const now=new Date();const y=new Date(Date.now()-86400000);if(d.toDateString()===now.toDateString())return 'Today';if(d.toDateString()===y.toDateString())return 'Yesterday';return d.toLocaleDateString([], {day:'numeric',month:'short'});}
+async function openStatusPage(){
+ const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');pv.classList.add('show');
+ pi.innerHTML='<div class="pageHeader"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div><h2>Status</h2><div style="color:#777;font-size:12px">Updates from KP users</div></div></div><div class="pageCard"><div class="statusComposer"><input class="field" id="statusTextInput" maxlength="180" placeholder="Write a status…"><button class="primary" style="width:auto;padding:0 16px" onclick="publishKPStatus()">Post</button></div><label class="secondary" style="display:grid;place-items:center;margin-top:8px;cursor:pointer">Photo / video<input type="file" id="statusFile" accept="image/*,video/*" hidden onchange="publishKPStatusFile(this.files[0])"></label></div><div class="pageCard"><b>Recent status</b><div id="statusScroller" class="statusScroller"><div class="statusEmpty">Loading statuses…</div></div></div>';
+ await loadKPStatuses();
+}
+async function loadKPStatuses(){
+ const box=document.getElementById('statusScroller');if(!box||!fbUser)return;
+ try{
+   const snap=await fbDb.collection('status').limit(80).get();const now=Date.now();
+   kpStatuses=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>{const t=kpMillis(x.createdAt)||0;return !t||now-t<86400000}).sort((a,b)=>(kpMillis(b.createdAt)-kpMillis(a.createdAt)));
+   box.innerHTML=kpStatuses.map(x=>{const u=kpSenderCache[x.userId]||{};const src=x.photoURL||u.photoURL||'';const name=x.displayName||u.displayName||x.username||'User';return '<div class="statusItem" onclick="openStatusViewer(\''+x.id+'\')"><div class="statusAvatar">'+(src?'<img src="'+escapeHtml(src)+'" alt="">':escapeHtml(name[0].toUpperCase()))+'</div><div class="statusName">'+escapeHtml(name)+'</div><div class="statusTime">'+escapeHtml(statusDisplayDate(x.createdAt))+' · '+escapeHtml(kpTime(x.createdAt))+'</div></div>'}).join('')||'<div class="statusEmpty">No status updates yet.</div>';
+ }catch(e){console.error(e);box.innerHTML='<div class="statusEmpty">Could not load statuses.</div>';}
+}
+async function publishKPStatus(){const text=document.getElementById('statusTextInput')?.value.trim();if(!text)return toast('Write something first');try{await fbDb.collection('status').add({userId:fbUser.uid,username:fbUserProfile?.username||'',displayName:fbUserProfile?.displayName||'KP User',photoURL:fbUserProfile?.photoURL||'',type:'text',text,createdAt:KPServerTS()});toast('Status posted');loadKPStatuses();}catch(e){console.error(e);toast('Could not post status');}}
+async function publishKPStatusFile(file){if(!file)return;try{toast('Uploading status…');const up=await cloudinaryUpload(file);await fbDb.collection('status').add({userId:fbUser.uid,username:fbUserProfile?.username||'',displayName:fbUserProfile?.displayName||'KP User',photoURL:fbUserProfile?.photoURL||'',type:file.type.startsWith('video/')?'video':'image',mediaURL:up.secure_url,createdAt:KPServerTS()});toast('Status posted');loadKPStatuses();}catch(e){console.error(e);toast('Could not post status');}}
+function openStatusViewer(id){kpStatusIndex=kpStatuses.findIndex(x=>x.id===id);if(kpStatusIndex<0)return;document.getElementById('statusViewer')?.classList.add('show');renderCurrentStatus();}
+function closeStatusViewer(){clearTimeout(kpStatusTimer);document.getElementById('statusViewer')?.classList.remove('show');document.getElementById('statusMenu')?.classList.remove('show');kpCurrentStatus=null;}
+function renderCurrentStatus(){
+ clearTimeout(kpStatusTimer);const x=kpStatuses[kpStatusIndex];if(!x)return closeStatusViewer();kpCurrentStatus=x;const u=kpSenderCache[x.userId]||{};const name=x.displayName||u.displayName||x.username||'User';const src=x.photoURL||u.photoURL||'';
+ document.getElementById('statusViewerName').textContent=name;document.getElementById('statusViewerTime').textContent=statusDisplayDate(x.createdAt)+' · '+kpTime(x.createdAt);document.getElementById('statusViewerAvatar').innerHTML=src?'<img src="'+escapeHtml(src)+'" alt="">':escapeHtml(name[0].toUpperCase());document.getElementById('statusDeleteBtn').style.display=x.userId===fbUser.uid?'block':'none';
+ const body=document.getElementById('statusViewerBody');body.innerHTML=x.type==='image'&&x.mediaURL?'<img src="'+escapeHtml(x.mediaURL)+'" alt="Status">':x.type==='video'&&x.mediaURL?'<video src="'+escapeHtml(x.mediaURL)+'" autoplay playsinline></video>':'<div class="statusViewerText">'+escapeHtml(x.text||'')+'</div>';
+ const progress=document.getElementById('statusProgress');progress.innerHTML=kpStatuses.map((_,i)=>'<i class="'+(i<kpStatusIndex?'done':'')+'"><span></span></i>').join('');const active=progress.children[kpStatusIndex];if(active){active.querySelector('span').style.transition='width 6s linear';requestAnimationFrame(()=>active.querySelector('span').style.width='100%');kpStatusTimer=setTimeout(nextStatus,6000);}
+ body.onpointerdown=()=>{clearTimeout(kpStatusTimer);kpStatusPaused=true};body.onpointerup=()=>{if(kpStatusPaused){kpStatusPaused=false;nextStatus()}};body.onpointercancel=()=>{kpStatusPaused=false;nextStatus()};
+}
+function nextStatus(){kpStatusPaused=false;if(kpStatusIndex<kpStatuses.length-1){kpStatusIndex++;renderCurrentStatus()}else closeStatusViewer();}
+function toggleStatusMenu(){document.getElementById('statusMenu')?.classList.toggle('show')}
+async function deleteCurrentStatus(){const x=kpCurrentStatus;if(!x||x.userId!==fbUser.uid)return toast('You can delete only your own status');if(!confirm('Delete this status?'))return;try{await fbDb.collection('status').doc(x.id).delete();closeStatusViewer();await loadKPStatuses();toast('Status deleted')}catch(e){console.error(e);toast('Could not delete status')}}
+async function openStatusAuthorChat(){const x=kpCurrentStatus;if(!x)return;if(x.userId===fbUser.uid)return toggleStatusMenu();try{await startChatWithUser(x.userId);closeStatusViewer()}catch(e){toast('Could not open chat')}}
+async function replyToStatus(){const x=kpCurrentStatus,input=document.getElementById('statusReplyInput'),text=input?.value.trim();if(!x||!text||!fbUser)return;if(x.userId===fbUser.uid)return toast('You cannot reply to your own status');try{const chatId=await ensurePrivateChat(x.userId,x.displayName||x.username||'User','');const ids=[fbUser.uid,x.userId].sort();await fbDb.collection('chats').doc(chatId).collection('messages').add({senderId:fbUser.uid,type:'text',text,createdAt:firebase.firestore.FieldValue.serverTimestamp(),statusId:x.id,statusOwnerId:x.userId,statusPreview:x.text||x.type||'Status',replyTo:null,media:null,reactions:{},deliveredTo:[],readBy:[]});const unread={};unread[fbUser.uid]=0;unread[x.userId]=1;await fbDb.collection('chats').doc(chatId).set({memberIds:ids,lastMessage:text,lastMessageAt:firebase.firestore.FieldValue.serverTimestamp(),lastMessageSenderId:fbUser.uid,unreadCount:unread},{merge:true});input.value='';toast('Status reply sent');closeStatusViewer();}catch(e){console.error(e);toast('Could not send status reply')}}
+
+/* KPAI normal chat presentation */
+function openKPAI(){const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');pv.classList.add('show');pi.innerHTML='<div class="kpaiPage"><div class="kpaiHead"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="kpaiOrb"></div><div><h2 style="margin:0">KPAI</h2><div style="color:#69eaff;font-size:11px">KP AI Assistant · Online</div></div></div><div class="kpaiBody" id="kpaiBody"><div class="kpaiMsg"><b>KPAI</b><br>Hi! I’m KPAI. Ask me anything about KP WhatsApp, groups, calls, profiles, GIFs, status, or your KP projects.</div></div><div class="kpaiTyping" id="kpaiTyping">KPAI is typing…</div><div class="kpaiInput"><input id="kpaiInput" placeholder="Message KPAI" onkeydown="if(event.key===&quot;Enter&quot;)sendKPAI()"><button onclick="sendKPAI()">➤</button></div></div>';}
 </script>
 </body>
 </html>
