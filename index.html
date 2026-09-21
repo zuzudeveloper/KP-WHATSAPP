@@ -4453,6 +4453,988 @@ window.openGroupDetails = async function(){
 console.log('Group Calling feature loaded - Start group call from group chat header');
 </script>
 
+
+<style id="perfect-match-css">
+/* ===== DP PERFECT ROUND ALIGNMENT - EVERYWHERE ===== */
+.avatar, .miniAvatar, .profileAvatarBig, .groupPickAvatar, .groupDetailAvatar, .pAvatar, .callAvatar, .localAvatar, .groupCallParticipant .pAvatar {
+  border-radius:50% !important;
+  overflow:hidden !important;
+  position:relative !important;
+  display:grid !important;
+  place-items:center !important;
+  flex-shrink:0 !important;
+  aspect-ratio:1/1 !important;
+  background:linear-gradient(145deg,#1f2c34,#111b21) !important;
+}
+.avatar img, .miniAvatar img, .profileAvatarBig img, .groupPickAvatar img, .groupDetailAvatar img, .pAvatar img, .callAvatar img, .localAvatar img {
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  object-position:center center !important;
+  display:block !important;
+  border-radius:50% !important;
+}
+.avatar{width:49px !important; height:49px !important}
+.miniAvatar{width:42px !important; height:42px !important}
+.callAvatar{width:168px !important; height:168px !important}
+.groupCallParticipant .pAvatar{width:72px !important; height:72px !important}
+
+/* ===== CHAT WALLPAPER - FIXED, NOT SCROLLING, MORE COLORFUL ===== */
+.messages{
+  background-color:#111b21 !important;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(184,255,34,.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(37,211,102,.06) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg width='400' height='400' viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.035'%3E%3Cpath d='M50 50c0-5 4-9 9-9s9 4 9 9-4 9-9 9-9-4-9-9zm100 50c-3-3-3-8 0-11s8-3 11 0 3 8 0 11-8 3-11 0zm80 20l10 10-10 10-10-10 10-10zm-60 80c0-4 3-7 7-7s7 3 7 7-3 7-7 7-7-3-7-7zm120 40c-4 0-7-3-7-7s3-7 7-7 7 3 7 7-3 7-7 7zm-200 30c-2-2-2-6 0-8s6-2 8 0 2 6 0 8-6 2-8 0zm250-150c-3 0-5-2-5-5s2-5 5-5 5 2 5 5-2 5-5 5z'/%3E%3C/g%3E%3C/svg%3E") !important;
+  background-size:auto, auto, 400px 400px !important;
+  background-attachment:fixed, fixed, fixed !important;
+  background-position:0 0, 0 0, 0 0 !important;
+  position:relative !important;
+}
+.messages::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  background:transparent !important;
+  animation:none !important;
+}
+.messages > *{position:relative; z-index:1}
+
+/* ===== MESSAGE BUBBLE - EXACT WHATSAPP LIKE (Image 4) ===== */
+.msg{
+  max-width:65% !important;
+  width:fit-content !important;
+  border-radius:7.5px !important;
+  padding:0 !important;
+  margin:2px 0 !important;
+  box-shadow:0 1px 0.5px rgba(0,0,0,.13) !important;
+  position:relative !important;
+  word-wrap:break-word !important;
+}
+.msg.me{
+  background:#005c4b !important;
+  background-color:#005c4b !important;
+  color:#e9edef !important;
+  border-top-right-radius:0 !important;
+  margin-left:auto !important;
+  align-self:flex-end !important;
+}
+.msg.me::after{
+  content:"" !important;
+  position:absolute !important;
+  top:0 !important;
+  right:-8px !important;
+  width:8px !important;
+  height:13px !important;
+  background:radial-gradient(circle at 0 0, transparent 50%, #005c4b 50%) !important;
+  background-color:transparent !important;
+  border:0 !important;
+  transform:none !important;
+  clip-path:none !important;
+}
+.msg.in{
+  background:#202c33 !important;
+  color:#e9edef !important;
+  border-top-left-radius:0 !important;
+  align-self:flex-start !important;
+}
+.msg.in::before{
+  content:"" !important;
+  position:absolute !important;
+  top:0 !important;
+  left:-8px !important;
+  width:8px !important;
+  height:13px !important;
+  background:#202c33 !important;
+  clip-path:polygon(0 0, 100% 0, 100% 100%) !important;
+}
+
+.msg .txt{
+  padding:6px 7px 8px 9px !important;
+  font-size:14.2px !important;
+  line-height:19px !important;
+  color:#e9edef !important;
+  display:inline !important;
+  word-break:break-word !important;
+}
+.msg.me .txt{color:#e9edef !important}
+.msg.in .txt{color:#e9edef !important}
+
+.msg .meta{
+  display:inline-flex !important;
+  float:right !important;
+  clear:none !important;
+  margin:0 !important;
+  padding:0 0 0 8px !important;
+  font-size:11px !important;
+  line-height:15px !important;
+  color:#8696a0 !important;
+  align-items:flex-end !important;
+  gap:3px !important;
+  position:relative !important;
+  bottom:-4px !important;
+  background:transparent !important;
+}
+.msg.me .meta{color:#53bdeb !important; color:rgba(255,255,255,.6) !important}
+.msg.me .meta .delivery.read{color:#53bdeb !important}
+.msg.in .meta{color:#8696a0 !important}
+
+/* For short messages like Hi - time on same line */
+.msg.me .txt + .meta, .msg.in .txt + .meta{
+  display:inline-flex !important;
+  vertical-align:bottom !important;
+}
+
+/* ===== DELETED MESSAGE - Image 5 ===== */
+.msg.deleted, .msg.me.deleted{
+  background:#005c4b !important;
+  background-color:#005c4b !important;
+  opacity:.9 !important;
+}
+.msg.deleted .txt, .msg.me.deleted .txt{
+  color:#8696a0 !important;
+  font-style:italic !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:6px !important;
+  font-size:13.5px !important;
+}
+.msg.deleted .txt::before{
+  content:"🚫";
+  font-style:normal;
+  width:18px;
+  height:18px;
+  border:1px solid #8696a0;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  font-size:10px;
+}
+
+/* ===== CALL LOG BUBBLE - Image 3 - Video call 55 sec ===== */
+.msg.callLog, .msg.me.callLog, .msg.in.callLog{
+  background:#202c33 !important;
+  border-radius:7.5px !important;
+  padding:0 !important;
+  max-width:70% !important;
+  box-shadow:0 1px 0.5px rgba(0,0,0,.13) !important;
+}
+.callLogBubble{
+  display:flex !important;
+  align-items:center !important;
+  gap:12px !important;
+  padding:10px 12px 10px 10px !important;
+  min-width:200px !important;
+}
+.callLogBubble .callIcon{
+  width:42px !important;
+  height:42px !important;
+  border-radius:50% !important;
+  background:#00a884 !important;
+  display:grid !important;
+  place-items:center !important;
+  flex-shrink:0 !important;
+}
+.callLogBubble .callIcon.missed{background:#f15c6d !important}
+.callLogBubble .callIcon svg{width:20px; height:20px; fill:white; stroke:white}
+.callLogBubble .callInfo{flex:1; min-width:0}
+.callLogBubble .callInfo b{display:block; font-size:14.5px; color:#e9edef; font-weight:400}
+.callLogBubble .callInfo small{display:block; font-size:12.5px; color:#8696a0; margin-top:2px}
+.callLogBubble .callTime{font-size:11px; color:#8696a0; align-self:flex-end; margin-left:auto}
+
+/* ===== CALLING SCREEN - Image 2 - Kunjutti Ringing ===== */
+.callOverlay, .groupCallOverlay{
+  background:#111b21 !important;
+  background-color:#0b141a !important;
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100dvh !important;
+}
+.callOverlay::before, .groupCallOverlay::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,.03) 1px, transparent 1px),
+    url("data:image/svg+xml,%3Csvg width='300' height='300' viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.04' stroke-width='1'%3E%3Cpath d='M50 50l20 20M80 50l-20 20M150 30c10 10 10 30 0 40M200 100c-5 15 5 25 15 20M250 150c-10 10-10 30 0 40M100 200c15 5 25-5 20-15M50 250c10-10 30-10 40 0M200 250c-10-10-10-30 0-40'/%3E%3Ccircle cx='100' cy='100' r='15'/%3E%3Crect x='180' y='50' width='30' height='20' rx='4'/%3E%3C/g%3E%3C/svg%3E") !important;
+  background-size:24px 24px, 300px 300px !important;
+  pointer-events:none !important;
+  opacity:1 !important;
+}
+.callCard.upgraded{
+  background:transparent !important;
+  width:100vw !important;
+  height:100dvh !important;
+  max-width:100vw !important;
+  min-height:100dvh !important;
+}
+.callAvatarSection{flex:1 !important; justify-content:center !important}
+.callAvatar{
+  width:200px !important;
+  height:200px !important;
+  border:4px solid rgba(255,255,255,.08) !important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.05) !important;
+}
+.callTopBar{position:absolute !important; top:0 !important; left:0 !important; right:0 !important; padding:18px 16px !important; background:transparent !important; z-index:5}
+.callTopBar .callStatusDot{display:none !important}
+#callSub{color:#8696a0 !important; font-size:14px !important}
+#callTitle{font-size:22px !important; font-weight:400 !important; color:#e9edef !important; margin-top:12px !important}
+.callVisualizer{display:none !important} /* hide local preview for 1-1 to match image 2 */
+
+/* Bottom controls - pill shape like image 2 */
+.callActions.upgradedActions{
+  position:absolute !important;
+  bottom:24px !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+  background:#202c33 !important;
+  border-radius:32px !important;
+  padding:10px 14px !important;
+  gap:10px !important;
+  width:auto !important;
+  max-width:90% !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.4) !important;
+}
+.callAction{width:48px !important; height:48px !important}
+.callAction.end{width:52px !important; height:52px !important; background:#f15c6d !important}
+.callAction.mute{background:#2a3942 !important}
+.callAction.speaker{background:#2a3942 !important}
+.callAction.mute.muted{background:#f15c6d !important}
+
+/* Add people button top right like image 2 */
+.callAddPeopleTop{
+  position:absolute;
+  top:14px;
+  right:14px;
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  background:rgba(0,0,0,.4);
+  border:1px solid rgba(255,255,255,.08);
+  display:grid;
+  place-items:center;
+  color:#e9edef;
+  cursor:pointer;
+  z-index:6;
+}
+
+/* ===== ADD PEOPLE PAGE - Image 1 ===== */
+.addPeoplePage{
+  min-height:100dvh;
+  background:#111b21;
+  color:#e9edef;
+}
+.addPeopleHeader{
+  position:sticky;
+  top:0;
+  z-index:3;
+  background:#202c33;
+  padding:12px 16px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.addPeopleHeader .backBtn{
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:transparent;
+  border:none;
+  color:#e9edef;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+}
+.addPeopleHeader .title b{display:block; font-size:19px; font-weight:500}
+.addPeopleHeader .title small{display:block; font-size:13px; color:#8696a0; margin-top:2px}
+.addPeopleHeader .searchBtn{margin-left:auto; width:40px; height:40px; border-radius:50%; background:transparent; border:none; color:#e9edef; display:grid; place-items:center; cursor:pointer}
+
+.addPeopleSection{padding:12px 0}
+.addPeopleSection .sectionTitle{
+  padding:8px 16px;
+  font-size:13px;
+  color:#8696a0;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  font-weight:500;
+}
+.addPeopleRow{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:10px 16px;
+  cursor:pointer;
+  transition:.15s;
+}
+.addPeopleRow:hover{background:rgba(255,255,255,.04)}
+.addPeopleRow .apAvatar{
+  width:49px;
+  height:49px;
+  border-radius:50%;
+  overflow:hidden;
+  flex-shrink:0;
+  background:#2a3942;
+  display:grid;
+  place-items:center;
+  color:#e9edef;
+  font-weight:500;
+}
+.addPeopleRow .apAvatar img{width:100%; height:100%; object-fit:cover}
+.addPeopleRow .apInfo{flex:1; min-width:0}
+.addPeopleRow .apInfo b{display:block; font-size:16.5px; font-weight:400; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#e9edef}
+.addPeopleRow .apInfo small{display:block; font-size:13.5px; color:#8696a0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px}
+
+/* ===== G MAP PAGE - Replace AI ===== */
+.gmapPage{
+  min-height:100dvh;
+  background:#111b21;
+  display:flex;
+  flex-direction:column;
+}
+.gmapHeader{
+  background:#202c33;
+  padding:10px 12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.gmapHeader .searchBox{
+  flex:1;
+  background:#2a3942;
+  border-radius:24px;
+  padding:8px 14px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#8696a0;
+}
+.gmapHeader .searchBox input{
+  flex:1;
+  background:transparent;
+  border:none;
+  color:#e9edef;
+  outline:none;
+  font-size:15px;
+}
+.gmapContainer{
+  flex:1;
+  position:relative;
+  background:#0b141a;
+  overflow:hidden;
+}
+.gmapContainer #gmap{
+  width:100%;
+  height:100%;
+  min-height:400px;
+}
+.gmapControls{
+  position:absolute;
+  bottom:20px;
+  right:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  z-index:5;
+}
+.gmapControls button{
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  background:#202c33;
+  border:1px solid rgba(255,255,255,.1);
+  color:#e9edef;
+  display:grid;
+  place-items:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);
+  cursor:pointer;
+}
+.gmapShareBar{
+  background:#202c33;
+  padding:12px 16px;
+  display:flex;
+  gap:10px;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.gmapShareBar button{
+  flex:1;
+  padding:12px;
+  border-radius:24px;
+  border:none;
+  font-weight:500;
+  font-size:14.5px;
+  cursor:pointer;
+}
+.gmapShareBar .shareBtn{background:#00a884; color:white}
+.gmapShareBar .settingsBtn{background:#2a3942; color:#e9edef; flex:0 0 44px; border-radius:50%; width:44px; display:grid; place-items:center}
+
+/* Location message bubble */
+.msg.locationMsg .locationBubble{
+  width:260px;
+  border-radius:8px;
+  overflow:hidden;
+  background:#202c33;
+  border:1px solid rgba(255,255,255,.06);
+}
+.msg.locationMsg .locationMap{
+  height:120px;
+  background:#0b141a;
+  position:relative;
+  background-image:url('https://maps.googleapis.com/maps/api/staticmap?center=0,0&zoom=15&size=260x120&markers=color:red%7C0,0&key=demo');
+  background-size:cover;
+}
+.msg.locationMsg .locationInfo{padding:8px 10px}
+.msg.locationMsg .locationInfo b{display:block; font-size:14px; color:#e9edef}
+.msg.locationMsg .locationInfo small{color:#8696a0; font-size:12px}
+
+/* ===== NAV - G MAP INSTEAD OF AI ===== */
+.nav button.gmapNav.active::after{background:#00a884 !important; box-shadow:0 0 8px #00a884 !important}
+</style>
+
+
+<script id="perfect-match-js">
+console.log('Perfect match fixes loading...');
+
+// ===== 1. DP PERFECT ROUND - enforce everywhere =====
+function enforceDPAlignment(){
+  document.querySelectorAll('.avatar, .miniAvatar, .profileAvatarBig, .groupPickAvatar, .groupDetailAvatar, .pAvatar, .callAvatar').forEach(el=>{
+    el.style.borderRadius = '50%';
+    el.style.overflow = 'hidden';
+    el.style.aspectRatio = '1/1';
+    const img = el.querySelector('img');
+    if(img){
+      img.style.width='100%';
+      img.style.height='100%';
+      img.style.objectFit='cover';
+      img.style.objectPosition='center';
+      img.style.borderRadius='50%';
+    }
+  });
+}
+setInterval(enforceDPAlignment, 2000);
+setTimeout(enforceDPAlignment, 500);
+
+// ===== 2. MESSAGE BUBBLE - WHATSAPP EXACT =====
+const _origRenderMessagesPerfect = window.renderMessages;
+window.renderMessages = function(){
+  if(_origRenderMessagesPerfect) _origRenderMessagesPerfect();
+  // After render, fix meta alignment for short messages like "Hi"
+  document.querySelectorAll('.msg.me, .msg.in').forEach(el=>{
+    const txt = el.querySelector('.txt');
+    const meta = el.querySelector('.meta');
+    if(txt && meta){
+      // If text is short (less than 30 chars), keep meta inline
+      const textLen = txt.textContent.trim().length;
+      if(textLen < 25){
+        el.style.display = 'flex';
+        el.style.flexWrap = 'wrap';
+        el.style.alignItems = 'flex-end';
+        el.style.gap = '4px';
+        txt.style.display = 'inline';
+        meta.style.display = 'inline-flex';
+        meta.style.float = 'none';
+        meta.style.marginLeft = '6px';
+      }
+    }
+  });
+};
+
+// ===== 3. DELETED MESSAGE HANDLING =====
+window.deleteMessage = async function(docId){
+  if(!docId || !current?.firestoreId) return;
+  if(!confirm('Delete this message?')) return;
+  try{
+    await fbDb.collection('chats').doc(current.firestoreId).collection('messages').doc(docId).update({
+      deleted: true,
+      text: 'You deleted this message',
+      type: 'deleted',
+      deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // Update local
+    const msg = current.messages.find(m=>m[5]?.id===docId);
+    if(msg){
+      msg[0]='deleted';
+      msg[1]='You deleted this message';
+    }
+    renderMessages();
+    if(typeof toast==='function') toast('Message deleted');
+  }catch(e){ console.error(e); }
+};
+
+// Override select to show delete for single
+window.selectMessage = function(docId, idx){
+  if(!docId) return;
+  window.selectedMessageIds = window.selectedMessageIds||new Set();
+  if(window.selectedMessageIds.has(docId)){
+    window.selectedMessageIds.delete(docId);
+  } else {
+    window.selectedMessageIds.add(docId);
+  }
+  const bar = document.querySelector('.messageSelectBar');
+  if(bar){
+    if(window.selectedMessageIds.size>0){
+      bar.classList.add('show');
+      const countEl = bar.querySelector('.count');
+      if(countEl) countEl.textContent = window.selectedMessageIds.size + ' selected';
+      // If single, show delete icon directly on bubble
+      if(window.selectedMessageIds.size===1){
+        const el = document.querySelector(`.msg[data-message-id="${docId}"]`);
+        if(el && !el.querySelector('.quickDelete')){
+          const btn = document.createElement('button');
+          btn.className='quickDelete';
+          btn.innerHTML='🗑️';
+          btn.style.cssText='position:absolute; top:-8px; right:-8px; width:28px; height:28px; border-radius:50%; background:#f15c6d; border:none; color:white; display:grid; place-items:center; cursor:pointer; z-index:5; box-shadow:0 2px 8px rgba(0,0,0,.3)';
+          btn.onclick = (e)=>{ e.stopPropagation(); window.deleteSelectedMessages(); };
+          el.style.position='relative';
+          el.appendChild(btn);
+        }
+      }
+    } else {
+      bar.classList.remove('show');
+      document.querySelectorAll('.quickDelete').forEach(b=>b.remove());
+    }
+  }
+  document.querySelectorAll('.msg[data-message-id]').forEach(el=>{
+    const id = el.dataset.messageId;
+    if(window.selectedMessageIds.has(id)){
+      el.classList.add('msgLongSelected');
+    } else {
+      el.classList.remove('msgLongSelected');
+      const qd = el.querySelector('.quickDelete');
+      if(qd) qd.remove();
+    }
+  });
+};
+
+// ===== 4. CALL LOG BUBBLE - Image 3 =====
+function createCallLogBubble(type, duration, time){
+  const isVideo = type.includes('video');
+  const icon = isVideo 
+    ? `<svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>`
+    : `<svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>`;
+  
+  const title = isVideo ? 'Video call' : 'Voice call';
+  const sub = duration ? `${duration}` : (type.includes('missed') ? 'Missed' : 'Outgoing');
+  
+  return `
+    <div class="callLogBubble">
+      <div class="callIcon ${type.includes('missed')?'missed':''}">${icon}</div>
+      <div class="callInfo">
+        <b>${title}</b>
+        <small>${sub}</small>
+      </div>
+      <div class="callTime">${time||new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
+    </div>
+  `;
+}
+
+window.logCallInChat = async function(type, duration){
+  if(!current?.firestoreId || !fbUser) return;
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const bubble = createCallLogBubble(type, duration, time);
+  try{
+    await fbDb.collection('chats').doc(current.firestoreId).collection('messages').add({
+      senderId: fbUser.uid,
+      type: 'call',
+      callType: type,
+      duration: duration||'',
+      text: bubble,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      readBy: [fbUser.uid],
+      deliveredTo: current.memberIds||[]
+    });
+  }catch(e){ console.warn('logCallInChat failed', e); }
+};
+
+// Hook into endVoiceCall to log
+const _origEndVoiceCallPerfect = window.endVoiceCall;
+window.endVoiceCall = function(sendClose=true){
+  const start = window.callStartedAt||0;
+  const duration = start ? Math.floor((Date.now()-start)/1000) : 0;
+  const durText = duration>0 ? `${Math.floor(duration/60)}:${String(duration%60).padStart(2,'0')}` : 'Missed';
+  const type = duration>0 ? 'voice' : 'missed_voice';
+  if(duration>0 && current){
+    setTimeout(()=>{ window.logCallInChat(type, durText); }, 500);
+  }
+  if(_origEndVoiceCallPerfect) return _origEndVoiceCallPerfect(sendClose);
+};
+
+const _origEndGroupCallPerfect = window.endGroupCall;
+window.endGroupCall = function(shouldDeleteDoc=true){
+  const start = window.groupCallState?.startedAt||0;
+  const duration = start ? Math.floor((Date.now()-start)/1000) : 0;
+  const durText = duration>0 ? `${Math.floor(duration/60)} min, ${duration%60} sec` : '';
+  if(duration>0 && current){
+    setTimeout(()=>{ window.logCallInChat('group_video', durText); }, 500);
+  }
+  if(_origEndGroupCallPerfect) return _origEndGroupCallPerfect(shouldDeleteDoc);
+};
+
+// ===== 5. ADD PEOPLE PAGE - Image 1 =====
+window.openAddPeoplePage = function(forGroupCall=false){
+  const pv = document.getElementById('pageView');
+  const pi = document.getElementById('pageInner');
+  if(!pv||!pi) return;
+  
+  pv.style.display='';
+  pv.classList.add('show');
+  
+  // Get contacts - from realUsers or chats
+  const contacts = (window.realUsers||[]).slice(0,50).map(u=>({
+    name: u.displayName||u.username||'User',
+    status: u.bio||'Available',
+    photo: u.photoURL||'',
+    uid: u.uid,
+    initial: (u.displayName||u.username||'U')[0].toUpperCase()
+  }));
+  
+  // Add frequently contacted from chats
+  const freq = chats.slice(0,6).filter(c=>!c.group).map(c=>({
+    name: c.name,
+    status: c.about||'Available',
+    photo: c.photoURL||'',
+    uid: c.otherUid,
+    initial: c.initial
+  }));
+  
+  const other = contacts.filter(c=>!freq.some(f=>f.uid===c.uid));
+  
+  pi.innerHTML = `
+    <div class="addPeoplePage">
+      <div class="addPeopleHeader">
+        <button class="backBtn" onclick="closePage()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+        <div class="title"><b>Add people</b><small>${freq.length + other.length} contacts</small></div>
+        <button class="searchBtn" onclick="if(typeof toast==='function') toast('Search')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+      </div>
+      
+      <div class="addPeopleSection">
+        <div class="sectionTitle">Frequently contacted</div>
+        ${freq.map(c=>`
+          <div class="addPeopleRow" onclick="addPeopleToCall('${c.uid}', '${c.name.replace(/'/g,"\'")}')">
+            <div class="apAvatar">${c.photo ? `<img src="${c.photo}" alt="">` : c.initial}</div>
+            <div class="apInfo"><b>${c.name}</b><small>${c.status}</small></div>
+          </div>
+        `).join('')}
+      </div>
+      
+      <div class="addPeopleSection">
+        <div class="sectionTitle">Other contacts</div>
+        ${other.map(c=>`
+          <div class="addPeopleRow" onclick="addPeopleToCall('${c.uid}', '${c.name.replace(/'/g,"\'")}')">
+            <div class="apAvatar">${c.photo ? `<img src="${c.photo}" alt="">` : c.initial}</div>
+            <div class="apInfo"><b>${c.name}</b><small>${c.status}</small></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+};
+
+window.addPeopleToCall = async function(uid, name){
+  if(!uid){
+    if(typeof toast==='function') toast('User not available');
+    return;
+  }
+  
+  // If in group call, add to group call
+  if(window.groupCallState?.active){
+    // Add to participants
+    const exists = groupCallState.participants.some(p=>p.uid===uid);
+    if(exists){
+      if(typeof toast==='function') toast(name+' already in call');
+      return;
+    }
+    
+    // Get peerId for this user if available
+    let peerId = '';
+    try{
+      const userDoc = await fbDb.collection('users').doc(uid).get();
+      if(userDoc.exists){
+        const data = userDoc.data();
+        peerId = data.peerId||data.lastPeerId||'';
+      }
+    }catch(e){}
+    
+    // Add to Firebase group call
+    try{
+      const groupId = groupCallState.groupId;
+      const doc = await fbDb.collection('groupCalls').doc(groupId).get();
+      if(doc.exists){
+        const existing = doc.data().participants||[];
+        existing.push({uid, name, status:'ringing', peerId});
+        await fbDb.collection('groupCalls').doc(groupId).update({participants: existing});
+        
+        // Also try to call directly if peerId known
+        if(peerId && groupCallState.localStream){
+          callGroupParticipant(uid, peerId);
+        }
+        
+        if(typeof toast==='function') toast(`Calling ${name}...`);
+        closePage();
+      }
+    }catch(e){
+      console.error('addPeopleToCall failed', e);
+      if(typeof toast==='function') toast('Could not add '+name);
+    }
+  } else if(current?.group){
+    // If in group chat but not in call, start group call with this person included
+    if(typeof toast==='function') toast(`Adding ${name} to group call...`);
+    closePage();
+    setTimeout(()=>{ startGroupCall(); }, 300);
+  } else {
+    // 1-1 call - start call with this person
+    if(typeof toast==='function') toast(`Calling ${name}...`);
+    // Find chat for this uid and start call
+    const chat = chats.find(c=>c.otherUid===uid);
+    if(chat){
+      current = chat;
+      if(typeof openChat==='function') await openChat(chat.id);
+      setTimeout(()=>{ if(typeof startVoiceCall==='function') startVoiceCall(); }, 500);
+    }
+    closePage();
+  }
+};
+
+// Override group call add button to open add people page
+document.addEventListener('click', function(e){
+  const addBtn = e.target.closest('.callAddPeopleTop, .groupCallActions .gAction.add');
+  if(addBtn && (window.groupCallState?.active || document.getElementById('groupCallOverlay')?.classList.contains('show'))){
+    e.preventDefault();
+    window.openAddPeoplePage(true);
+  }
+});
+
+// Add plus button to calling screen (Image 2 top right)
+function addPlusButtonToCallScreen(){
+  const callCard = document.querySelector('.callCard.upgraded, .groupCallOverlay .groupCallHeader');
+  if(!callCard) return;
+  
+  if(!document.querySelector('.callAddPeopleTop') && document.getElementById('callOverlay')?.classList.contains('show')){
+    const btn = document.createElement('button');
+    btn.className='callAddPeopleTop';
+    btn.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>';
+    btn.onclick = ()=>{ window.openAddPeoplePage(true); };
+    btn.title='Add people';
+    document.getElementById('callOverlay')?.appendChild(btn);
+  }
+}
+setInterval(addPlusButtonToCallScreen, 2000);
+
+// ===== 6. G MAP - Replace AI Feature =====
+window.openGMapPage = function(){
+  const pv = document.getElementById('pageView');
+  const pi = document.getElementById('pageInner');
+  if(!pv||!pi) return;
+  
+  pv.style.display='';
+  pv.classList.add('show');
+  
+  pi.innerHTML = `
+    <div class="gmapPage">
+      <div class="gmapHeader">
+        <button class="backBtn" onclick="closePage()" style="width:40px; height:40px; border-radius:50%; background:transparent; border:none; color:#e9edef; display:grid; place-items:center; cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+        <div class="searchBox">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="gmapSearch" placeholder="Search G Map" onkeypress="if(event.key==='Enter'){ searchGMap(this.value); }">
+        </div>
+        <button onclick="if(typeof toast==='function') toast('Voice search')" style="width:40px; height:40px; border-radius:50%; background:transparent; border:none; color:#00a884; display:grid; place-items:center; cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+      </div>
+      
+      <div class="gmapContainer">
+        <div id="gmap" style="width:100%; height:100%; background:#0b141a; display:grid; place-items:center; color:#8696a0;">
+          <div style="text-align:center; padding:20px">
+            <div style="width:80px; height:80px; border-radius:50%; background:#202c33; display:grid; place-items:center; margin:0 auto 16px; font-size:32px">🗺️</div>
+            <b style="color:#e9edef; display:block; font-size:16px">G Map</b>
+            <small style="display:block; margin-top:4px">Share your live location, explore nearby</small>
+            <button onclick="getCurrentLocationForGMap()" style="margin-top:16px; padding:10px 20px; background:#00a884; color:white; border:none; border-radius:20px; font-weight:500; cursor:pointer">📍 Use my location</button>
+          </div>
+        </div>
+        
+        <div class="gmapControls">
+          <button onclick="if(typeof toast==='function') toast('Layers')" title="Layers"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></button>
+          <button onclick="getCurrentLocationForGMap()" title="My location"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+      </div>
+      
+      <div class="gmapShareBar">
+        <button class="settingsBtn" onclick="openGMapSettings()" title="Settings"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.86 2.86M18.36 18.36l2.86 2.86M1 12h4M19 12h4M4.22 19.78l2.86-2.86M18.36 5.64l2.86-2.86"/></svg></button>
+        <button class="shareBtn" onclick="shareLocationInChat()">📍 Share live location</button>
+      </div>
+    </div>
+  `;
+  
+  // Try to load actual map with Leaflet if available, else keep placeholder
+  setTimeout(()=>{
+    const mapEl = document.getElementById('gmap');
+    if(mapEl && typeof L==='undefined'){
+      // Load Leaflet dynamically
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+      
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = ()=>{
+        initGMapLeaflet();
+      };
+      document.head.appendChild(script);
+    } else if(typeof L!=='undefined'){
+      initGMapLeaflet();
+    }
+  }, 500);
+};
+
+function initGMapLeaflet(){
+  const mapEl = document.getElementById('gmap');
+  if(!mapEl || mapEl._leaflet_id) return;
+  
+  mapEl.innerHTML = '';
+  mapEl.style.background = '#0b141a';
+  
+  try{
+    const map = L.map('gmap').setView([10.8505, 76.2711], 13); // Kerala
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+    
+    // Add marker for current location if available
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(pos=>{
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        L.marker([lat, lng]).addTo(map).bindPopup('You are here').openPopup();
+        map.setView([lat, lng], 15);
+        window._gmapCurrentPos = {lat, lng};
+      });
+    }
+    
+    window._gmapInstance = map;
+  }catch(e){
+    console.error('Leaflet init failed', e);
+    mapEl.innerHTML = '<div style="padding:20px; text-align:center; color:#8696a0">Map loading failed, check internet<br><button onclick="initGMapLeaflet()" style="margin-top:10px; padding:8px 16px; background:#00a884; color:white; border:none; border-radius:16px">Retry</button></div>';
+  }
+}
+window.initGMapLeaflet = initGMapLeaflet;
+
+window.getCurrentLocationForGMap = function(){
+  if(!navigator.geolocation){
+    if(typeof toast==='function') toast('Geolocation not supported');
+    return;
+  }
+  if(typeof toast==='function') toast('Getting location...');
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    window._gmapCurrentPos = {lat, lng};
+    if(window._gmapInstance){
+      window._gmapInstance.setView([lat, lng], 16);
+      L.marker([lat, lng]).addTo(window._gmapInstance).bindPopup('Your location').openPopup();
+    }
+    if(typeof toast==='function') toast(`Location: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+  }, err=>{
+    if(typeof toast==='function') toast('Location error: '+err.message);
+  });
+};
+
+window.shareLocationInChat = function(){
+  const pos = window._gmapCurrentPos;
+  if(!pos){
+    if(typeof toast==='function') toast('Get location first');
+    getCurrentLocationForGMap();
+    return;
+  }
+  if(!current?.firestoreId){
+    if(typeof toast==='function') toast('Open a chat first');
+    return;
+  }
+  
+  // Share as location message
+  fbDb.collection('chats').doc(current.firestoreId).collection('messages').add({
+    senderId: fbUser.uid,
+    type: 'location',
+    text: `📍 Location: ${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`,
+    lat: pos.lat,
+    lng: pos.lng,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    readBy: [fbUser.uid],
+    deliveredTo: current.memberIds||[]
+  }).then(()=>{
+    if(typeof toast==='function') toast('Location shared ✅');
+    closePage();
+    if(typeof renderMessages==='function') renderMessages();
+  }).catch(e=>{
+    console.error(e);
+    if(typeof toast==='function') toast('Share failed');
+  });
+};
+
+window.openGMapSettings = function(){
+  if(typeof toast==='function') toast('G Map Settings: Satellite, Traffic, Offline maps coming soon');
+};
+
+window.searchGMap = function(query){
+  if(!query) return;
+  if(typeof toast==='function') toast(`Searching "${query}" in G Map...`);
+  // In real implementation, use Nominatim or Google Places API
+  if(window._gmapInstance){
+    // Simple search via Nominatim
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
+      .then(r=>r.json())
+      .then(data=>{
+        if(data[0]){
+          const lat = parseFloat(data[0].lat);
+          const lon = parseFloat(data[0].lon);
+          window._gmapInstance.setView([lat, lon], 15);
+          L.marker([lat, lon]).addTo(window._gmapInstance).bindPopup(data[0].display_name).openPopup();
+        } else {
+          if(typeof toast==='function') toast('Location not found');
+        }
+      })
+      .catch(()=>{ if(typeof toast==='function') toast('Search failed, check internet'); });
+  }
+};
+
+// Replace KPAI nav with G Map nav
+function replaceAINavWithGMap(){
+  const nav = document.querySelector('.nav');
+  if(!nav) return;
+  
+  // Find KPAI button
+  const kpaiBtn = nav.querySelector('.kpaiNav, [onclick*="openKPAI"], [onclick*="kpaiOpen"]');
+  if(kpaiBtn){
+    kpaiBtn.innerHTML = '<span class="kpaiIcon" style="background:#00a884">🗺️</span><span>G Map</span>';
+    kpaiBtn.onclick = function(){
+      document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+      this.classList.add('active');
+      openGMapPage();
+    };
+    kpaiBtn.classList.remove('kpaiNav');
+    kpaiBtn.classList.add('gmapNav');
+  } else {
+    // If no KPAI button, add G Map button
+    if(!nav.querySelector('.gmapNav')){
+      const btn = document.createElement('button');
+      btn.className='gmapNav';
+      btn.innerHTML='<span class="kpaiIcon" style="background:#00a884">🗺️</span><span>G Map</span>';
+      btn.onclick = function(){
+        document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+        this.classList.add('active');
+        openGMapPage();
+      };
+      nav.appendChild(btn);
+    }
+  }
+}
+setTimeout(replaceAINavWithGMap, 1000);
+setTimeout(replaceAINavWithGMap, 3000);
+
+console.log('Perfect match fixes loaded - DP round, message bubbles, call logs, add people, G Map');
+})();
+</script>
+
 </body>
 </html><style>
 /* KPAI UI refresh — frontend only. No API key is stored here. */
