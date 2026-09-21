@@ -3510,6 +3510,949 @@ console.log('ULTIMATE PRO fixes applied - calling full screen, ticks, notificati
 })();
 </script>
 
+
+<style id="group-call-css">
+/* ===== GROUP CALLING ===== */
+.groupCallBtn{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  background:linear-gradient(145deg,#b8ff22,#6fa900);
+  border:none;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  box-shadow:0 4px 12px rgba(184,255,34,.3);
+  transition:.2s;
+}
+.groupCallBtn:hover{transform:scale(1.05); box-shadow:0 6px 16px rgba(184,255,34,.4)}
+.groupCallBtn svg{width:20px;height:20px;fill:none;stroke:#000;stroke-width:2}
+
+.groupCallOverlay{
+  position:fixed;
+  inset:0;
+  z-index:100000;
+  background:#000;
+  display:none;
+  flex-direction:column;
+}
+.groupCallOverlay.show{display:flex}
+.groupCallHeader{
+  padding:16px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:rgba(255,255,255,.03);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.groupCallHeader .info b{display:block; font-size:16px; color:#fff}
+.groupCallHeader .info small{color:#8a9a8a; font-size:12px}
+.groupCallTimer{
+  background:rgba(255,255,255,.08);
+  padding:6px 12px;
+  border-radius:20px;
+  font-size:12px;
+  font-variant-numeric:tabular-nums;
+  color:#e6f3f6;
+}
+
+.groupCallGrid{
+  flex:1;
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
+  gap:12px;
+  padding:20px;
+  overflow:auto;
+  align-content:start;
+  max-width:800px;
+  width:100%;
+  margin:0 auto;
+}
+@media(min-width:600px){
+  .groupCallGrid{grid-template-columns:repeat(2, 1fr); gap:16px; padding:24px}
+}
+@media(min-width:900px){
+  .groupCallGrid{grid-template-columns:repeat(3, 1fr)}
+}
+
+.groupCallParticipant{
+  aspect-ratio:1;
+  background:linear-gradient(145deg,#111,#0a0a0a);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:20px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  padding:16px;
+  position:relative;
+  transition:.3s;
+  overflow:hidden;
+}
+.groupCallParticipant.speaking{
+  border-color:rgba(106,239,255,.4);
+  box-shadow:0 0 20px rgba(106,239,255,.2), inset 0 0 20px rgba(106,239,255,.05);
+  transform:scale(1.02);
+}
+.groupCallParticipant.ringing{
+  animation:ringPulse 1.5s ease-in-out infinite;
+}
+@keyframes ringPulse{
+  0%,100%{opacity:1}
+  50%{opacity:.6}
+}
+.groupCallParticipant .pAvatar{
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  background:linear-gradient(145deg,#1c2e3a,#0f1a22);
+  display:grid;
+  place-items:center;
+  font-size:28px;
+  font-weight:800;
+  color:#8ac8d6;
+  position:relative;
+}
+.groupCallParticipant.speaking .pAvatar{
+  box-shadow:0 0 0 4px rgba(106,239,255,.15), 0 0 20px rgba(106,239,255,.3);
+}
+.groupCallParticipant .pAvatar img{width:100%; height:100%; object-fit:cover; border-radius:50%}
+.groupCallParticipant .pName{font-size:13px; font-weight:600; color:#e6f3f6; text-align:center}
+.groupCallParticipant .pStatus{font-size:10px; color:#7a8d93; display:flex; align-items:center; gap:4px}
+.groupCallParticipant .pStatus .dot{width:6px; height:6px; border-radius:50%; background:#4ade80}
+.groupCallParticipant .pStatus .dot.ringing{background:#f59e0b; animation:dotBlink 1s infinite}
+.groupCallParticipant .pStatus .dot.speaking{background:#6aefff; box-shadow:0 0 8px #6aefff}
+@keyframes dotBlink{50%{opacity:.3}}
+.groupCallParticipant .speakingBars{
+  display:flex;
+  gap:2px;
+  height:14px;
+  opacity:0;
+  transition:.3s;
+}
+.groupCallParticipant.speaking .speakingBars{opacity:1}
+.groupCallParticipant .speakingBars i{
+  width:3px;
+  background:#6aefff;
+  border-radius:4px;
+  animation:barWave .5s ease-in-out infinite;
+}
+.groupCallParticipant .speakingBars i:nth-child(2){animation-delay:.1s}
+.groupCallParticipant .speakingBars i:nth-child(3){animation-delay:.2s}
+.groupCallParticipant.muted{opacity:.6}
+.groupCallParticipant.muted .pAvatar::after{
+  content:"🔇";
+  position:absolute;
+  bottom:-4px;
+  right:-4px;
+  width:20px;
+  height:20px;
+  background:#ef4444;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  font-size:10px;
+}
+
+.groupCallActions{
+  padding:20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+  background:rgba(0,0,0,.8);
+  backdrop-filter:blur(20px);
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.groupCallActions .gAction{
+  width:56px;
+  height:56px;
+  border-radius:50%;
+  border:none;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition:.2s;
+}
+.groupCallActions .gAction:active{transform:scale(.92)}
+.groupCallActions .gAction.mute{background:rgba(255,255,255,.1); color:#fff}
+.groupCallActions .gAction.mute.muted{background:rgba(239,68,68,.2); color:#ff9a9a; border:1px solid rgba(239,68,68,.3)}
+.groupCallActions .gAction.end{background:linear-gradient(145deg,#ff5a5a,#b91c1c); color:white; width:64px; height:64px; box-shadow:0 8px 20px rgba(239,68,68,.3)}
+.groupCallActions .gAction.add{background:rgba(255,255,255,.08); color:#aaa}
+
+.incomingGroupCall{
+  position:fixed;
+  bottom:84px;
+  left:12px;
+  right:12px;
+  background:linear-gradient(135deg,#101a0f,#0a0e0a);
+  border:1px solid rgba(184,255,34,.2);
+  border-radius:16px;
+  padding:14px;
+  display:none;
+  z-index:9999;
+  box-shadow:0 12px 32px rgba(0,0,0,.6);
+  animation:slideUp .3s ease;
+}
+.incomingGroupCall.show{display:flex; align-items:center; gap:12px}
+.incomingGroupCall .icon{width:44px; height:44px; border-radius:50%; background:#b8ff22; display:grid; place-items:center; font-size:20px}
+.incomingGroupCall .info{flex:1}
+.incomingGroupCall .info b{display:block; font-size:14px; color:#fff}
+.incomingGroupCall .info small{color:#8a9a7a; font-size:11px}
+.incomingGroupCall .actions{display:flex; gap:8px}
+.incomingGroupCall .actions button{width:40px; height:40px; border-radius:50%; border:none; display:grid; place-items:center; cursor:pointer}
+.incomingGroupCall .actions .accept{background:#22c55e; color:white}
+.incomingGroupCall .actions .reject{background:#ef4444; color:white}
+</style>
+
+
+<script id="group-call-js">
+// ===== GROUP CALLING FEATURE =====
+console.log('Group Calling feature loading...');
+
+window.groupCallState = {
+  active: false,
+  groupId: null,
+  callId: null,
+  participants: [], // {uid, name, peerId, photoURL, status: 'ringing'|'joined'|'muted', stream, analyser}
+  localStream: null,
+  peerCalls: new Map(), // uid -> peer call
+  startedAt: null,
+  timerInt: null,
+  fbUnsub: null
+};
+
+function generateGroupCallId(groupId){
+  return groupId + '_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+}
+
+async function startGroupCall(){
+  if(!current?.group){
+    if(typeof toast==='function') toast('Group calls work only in groups');
+    return;
+  }
+  if(groupCallState.active){
+    if(typeof toast==='function') toast('Already in a group call');
+    return;
+  }
+  if(!fbUser || !fbDb){
+    if(typeof toast==='function') toast('Please sign in');
+    return;
+  }
+  
+  const groupId = current.firestoreId;
+  const callId = generateGroupCallId(groupId);
+  const memberIds = current.memberIds || [];
+  
+  if(memberIds.length < 2){
+    if(typeof toast==='function') toast('Need at least 2 members for group call');
+    return;
+  }
+  
+  try{
+    // Get local audio
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true, video:false});
+    groupCallState.localStream = stream;
+    groupCallState.active = true;
+    groupCallState.groupId = groupId;
+    groupCallState.callId = callId;
+    groupCallState.startedAt = Date.now();
+    
+    // Create participants list - all members ringing except self
+    const participants = memberIds.map(uid=>{
+      const isSelf = uid===fbUser.uid;
+      let name = 'User';
+      let photo = '';
+      if(isSelf){
+        name = fbUserProfile?.displayName||'You';
+        photo = fbUserProfile?.photoURL||'';
+      } else {
+        // Try to get from chats or cache
+        const chat = chats.find(c=>c.otherUid===uid);
+        name = chat?.name||'Member';
+        photo = chat?.photoURL||'';
+      }
+      return {
+        uid,
+        name,
+        photoURL: photo,
+        peerId: '', // will be filled when they join
+        status: isSelf ? 'joined' : 'ringing',
+        isSelf,
+        stream: isSelf ? stream : null,
+        analyser: null
+      };
+    });
+    groupCallState.participants = participants;
+    
+    // Save to Firebase - groupCalls collection
+    await fbDb.collection('groupCalls').doc(groupId).set({
+      callId,
+      groupId,
+      groupName: current.name||'Group',
+      initiator: fbUser.uid,
+      initiatorName: fbUserProfile?.displayName||'Someone',
+      initiatorPeerId: window.KP_PEER_ID||localStorage.getItem('kpwa_peer_id')||'',
+      startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      status: 'ringing',
+      participants: participants.map(p=>({uid:p.uid, name:p.name, status:p.status, peerId:p.peerId})),
+      memberIds: memberIds
+    });
+    
+    // Send system message to group chat about call
+    await fbDb.collection('chats').doc(groupId).collection('messages').add({
+      senderId: fbUser.uid,
+      type: 'system',
+      text: `📞 Group call started by ${fbUserProfile?.displayName||'Someone'} - Tap to join`,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      groupCallId: callId,
+      groupCallAction: 'started',
+      readBy: [fbUser.uid],
+      deliveredTo: memberIds
+    });
+    
+    // Show group call UI
+    showGroupCallUI();
+    startGroupCallTimer();
+    startGroupCallSpeakingDetection();
+    
+    // Listen for participants joining
+    listenToGroupCallUpdates(groupId);
+    
+    if(typeof toast==='function') toast(`Calling ${memberIds.length-1} members... 📞`);
+    
+  }catch(e){
+    console.error('startGroupCall failed', e);
+    if(typeof toast==='function') toast('Could not start group call: '+(e.message||'mic permission?'));
+    cleanupGroupCall();
+  }
+}
+window.startGroupCall = startGroupCall;
+
+function showGroupCallUI(){
+  let overlay = document.getElementById('groupCallOverlay');
+  if(!overlay){
+    overlay = document.createElement('div');
+    overlay.id = 'groupCallOverlay';
+    overlay.className = 'groupCallOverlay';
+    overlay.innerHTML = `
+      <div class="groupCallHeader">
+        <div class="info">
+          <b id="groupCallTitle">Group Call</b>
+          <small id="groupCallSub">${groupCallState.participants.length} members • Ringing...</small>
+        </div>
+        <div class="groupCallTimer" id="groupCallTimer">00:00</div>
+      </div>
+      <div class="groupCallGrid" id="groupCallGrid"></div>
+      <div class="groupCallActions">
+        <button class="gAction mute" id="groupMuteBtn" onclick="toggleGroupMute()" title="Mute">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg>
+        </button>
+        <button class="gAction add" onclick="if(typeof toast==='function') toast('Add participants coming soon')" title="Add">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 8v6"/><path d="M19 11v6"/><path d="M19 11v-3"/><path d="M25 11h-6"/></svg>
+        </button>
+        <button class="gAction end" onclick="endGroupCall()" title="End call">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+  
+  overlay.classList.add('show');
+  renderGroupCallGrid();
+}
+
+function renderGroupCallGrid(){
+  const grid = document.getElementById('groupCallGrid');
+  const title = document.getElementById('groupCallTitle');
+  const sub = document.getElementById('groupCallSub');
+  if(!grid) return;
+  
+  if(title) title.textContent = current?.name||'Group Call';
+  const joined = groupCallState.participants.filter(p=>p.status==='joined').length;
+  const total = groupCallState.participants.length;
+  if(sub) sub.textContent = `${joined}/${total} joined • ${total-joined} ringing...`;
+  
+  grid.innerHTML = groupCallState.participants.map(p=>{
+    const initial = (p.name||'U')[0].toUpperCase();
+    const avatar = p.photoURL ? `<img src="${p.photoURL}" alt="">` : initial;
+    const statusClass = p.status==='joined' ? 'joined' : 'ringing';
+    const speakingClass = p.speaking ? 'speaking' : '';
+    const mutedClass = p.muted ? 'muted' : '';
+    const statusText = p.isSelf ? 'You' : (p.status==='joined' ? 'Joined' : 'Ringing...');
+    const statusDot = p.status==='joined' ? (p.speaking ? 'speaking' : 'joined') : 'ringing';
+    
+    return `
+      <div class="groupCallParticipant ${statusClass} ${speakingClass} ${mutedClass}" data-uid="${p.uid}">
+        <div class="pAvatar">${avatar}</div>
+        <div class="pName">${p.name}${p.isSelf?' (You)':''}</div>
+        <div class="pStatus"><span class="dot ${statusDot}"></span>${statusText}</div>
+        <div class="speakingBars"><i></i><i></i><i></i></div>
+      </div>
+    `;
+  }).join('');
+}
+
+function startGroupCallTimer(){
+  if(groupCallState.timerInt) clearInterval(groupCallState.timerInt);
+  groupCallState.timerInt = setInterval(()=>{
+    const elapsed = Math.floor((Date.now() - groupCallState.startedAt)/1000);
+    const m = String(Math.floor(elapsed/60)).padStart(2,'0');
+    const s = String(elapsed%60).padStart(2,'0');
+    const el = document.getElementById('groupCallTimer');
+    if(el) el.textContent = `${m}:${s}`;
+  }, 1000);
+}
+
+function stopGroupCallTimer(){
+  if(groupCallState.timerInt){
+    clearInterval(groupCallState.timerInt);
+    groupCallState.timerInt = null;
+  }
+}
+
+function listenToGroupCallUpdates(groupId){
+  if(groupCallState.fbUnsub) groupCallState.fbUnsub();
+  try{
+    groupCallState.fbUnsub = fbDb.collection('groupCalls').doc(groupId).onSnapshot(snap=>{
+      if(!snap.exists){
+        // Call ended by initiator
+        if(groupCallState.active){
+          if(typeof toast==='function') toast('Group call ended');
+          endGroupCall(false);
+        }
+        return;
+      }
+      const data = snap.data();
+      const remoteParticipants = data.participants||[];
+      
+      // Update participants statuses
+      let changed = false;
+      remoteParticipants.forEach(rp=>{
+        const local = groupCallState.participants.find(p=>p.uid===rp.uid);
+        if(local && local.status!==rp.status){
+          local.status = rp.status;
+          local.peerId = rp.peerId||local.peerId;
+          changed = true;
+          // If new participant joined and has peerId, call them if we are initiator or already joined
+          if(rp.status==='joined' && rp.peerId && rp.uid!==fbUser.uid && !groupCallState.peerCalls.has(rp.uid)){
+            if(groupCallState.localStream){
+              callGroupParticipant(rp.uid, rp.peerId);
+            }
+          }
+        }
+      });
+      
+      if(changed) renderGroupCallGrid();
+    });
+  }catch(e){ console.warn('listenToGroupCallUpdates failed', e); }
+}
+
+function callGroupParticipant(uid, peerId){
+  if(!peer || !peer.open){
+    console.warn('Peer not ready for group call');
+    return;
+  }
+  if(!groupCallState.localStream){
+    console.warn('No local stream for group call');
+    return;
+  }
+  if(groupCallState.peerCalls.has(uid)){
+    return; // already calling
+  }
+  try{
+    console.log('Calling group participant', uid, peerId);
+    const call = peer.call(peerId, groupCallState.localStream, {
+      metadata: {
+        type: 'groupCall',
+        groupId: groupCallState.groupId,
+        callId: groupCallState.callId,
+        uid: fbUser.uid,
+        name: fbUserProfile?.displayName||'User',
+        photoURL: fbUserProfile?.photoURL||''
+      }
+    });
+    if(call){
+      groupCallState.peerCalls.set(uid, call);
+      bindGroupCall(call, uid);
+    }
+  }catch(e){ console.error('callGroupParticipant failed', e); }
+}
+
+function bindGroupCall(call, uid){
+  call.on('stream', remoteStream=>{
+    console.log('Got remote stream for group participant', uid);
+    const participant = groupCallState.participants.find(p=>p.uid===uid);
+    if(participant){
+      participant.stream = remoteStream;
+      participant.status = 'joined';
+      // Create audio element to play
+      let audio = document.getElementById('groupAudio_'+uid);
+      if(!audio){
+        audio = document.createElement('audio');
+        audio.id = 'groupAudio_'+uid;
+        audio.autoplay = true;
+        audio.playsInline = true;
+        document.body.appendChild(audio);
+      }
+      audio.srcObject = remoteStream;
+      audio.play().catch(()=>{});
+      
+      // Create analyser for speaking detection
+      try{
+        const ctx = window.kpAudioCtx || new (window.AudioContext||window.webkitAudioContext)();
+        window.kpAudioCtx = ctx;
+        if(ctx.state==='suspended') ctx.resume();
+        const source = ctx.createMediaStreamSource(remoteStream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        participant.analyser = analyser;
+      }catch(e){ console.warn('analyser failed for group', e); }
+      
+      renderGroupCallGrid();
+    }
+  });
+  
+  call.on('close', ()=>{
+    console.log('Group call closed for', uid);
+    groupCallState.peerCalls.delete(uid);
+    const p = groupCallState.participants.find(x=>x.uid===uid);
+    if(p){
+      p.status = 'ringing';
+      p.stream = null;
+      const audio = document.getElementById('groupAudio_'+uid);
+      if(audio){ audio.srcObject=null; audio.remove(); }
+      renderGroupCallGrid();
+    }
+  });
+  
+  call.on('error', err=>{
+    console.warn('Group call error for', uid, err);
+    groupCallState.peerCalls.delete(uid);
+  });
+}
+
+// Handle incoming group calls for all members
+function handleIncomingGroupCall(call){
+  const meta = call.metadata||{};
+  if(meta.type!=='groupCall') return false; // not group call, handle as 1-1
+  
+  const groupId = meta.groupId;
+  const callId = meta.callId;
+  
+  // Show incoming group call banner if not already in call
+  if(groupCallState.active) {
+    try{ call.close(); }catch(e){}
+    return true;
+  }
+  
+  // Find group name
+  const groupChat = chats.find(c=>c.firestoreId===groupId);
+  const groupName = groupChat?.name || meta.groupName || 'Group';
+  
+  showIncomingGroupCallBanner(groupId, callId, groupName, meta.name||'Someone', call);
+  return true;
+}
+
+function showIncomingGroupCallBanner(groupId, callId, groupName, callerName, callObj){
+  let banner = document.getElementById('incomingGroupCallBanner');
+  if(!banner){
+    banner = document.createElement('div');
+    banner.id = 'incomingGroupCallBanner';
+    banner.className = 'incomingGroupCall';
+    document.body.appendChild(banner);
+  }
+  
+  banner.innerHTML = `
+    <div class="icon">👥</div>
+    <div class="info">
+      <b>${groupName} - Group Call</b>
+      <small>${callerName} started a group call • Tap to join</small>
+    </div>
+    <div class="actions">
+      <button class="reject" onclick="rejectIncomingGroupCall()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+      <button class="accept" onclick="acceptIncomingGroupCall('${groupId}', '${callId}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4.5 9 4l2 4-2 2a13 13 0 0 0 5 5l2-2 4 2-.5 3a2 2 0 0 1-2.2 1.5C9.5 18.2 5.8 14.5 4.5 6.7A2 2 0 0 1 6 4.5Z"/></svg></button>
+    </div>
+  `;
+  banner.classList.add('show');
+  
+  // Store call for later
+  window._incomingGroupCall = {groupId, callId, groupName, callerName, call: callObj};
+  
+  // Auto hide after 30s
+  setTimeout(()=>{
+    if(banner.classList.contains('show')){
+      banner.classList.remove('show');
+    }
+  }, 30000);
+  
+  // Play ringtone
+  if(typeof playRingtone==='function') playRingtone();
+  
+  // Notification
+  if(typeof kpShowNotification==='function' && document.hidden){
+    kpShowNotification(`Group Call - ${groupName}`, `${callerName} started a group call`);
+  }
+}
+window.showIncomingGroupCallBanner = showIncomingGroupCallBanner;
+
+async function acceptIncomingGroupCall(groupId, callId){
+  const data = window._incomingGroupCall;
+  if(!data) return;
+  
+  const banner = document.getElementById('incomingGroupCallBanner');
+  if(banner) banner.classList.remove('show');
+  if(typeof stopRingtone==='function') stopRingtone();
+  
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true, video:false});
+    groupCallState.localStream = stream;
+    groupCallState.active = true;
+    groupCallState.groupId = data.groupId;
+    groupCallState.callId = data.callId;
+    groupCallState.startedAt = Date.now();
+    
+    // Get group members
+    let memberIds = [];
+    let groupName = data.groupName;
+    try{
+      const snap = await fbDb.collection('chats').doc(groupId).get();
+      if(snap.exists){
+        const gData = snap.data();
+        memberIds = gData.memberIds||[];
+        groupName = gData.name||groupName;
+        current = chats.find(c=>c.firestoreId===groupId) || current;
+      }
+    }catch(e){}
+    
+    // Build participants
+    groupCallState.participants = memberIds.map(uid=>{
+      const isSelf = uid===fbUser.uid;
+      const chat = chats.find(c=>c.otherUid===uid);
+      return {
+        uid,
+        name: isSelf ? (fbUserProfile?.displayName||'You') : (chat?.name||'Member'),
+        photoURL: isSelf ? (fbUserProfile?.photoURL||'') : (chat?.photoURL||''),
+        peerId: '',
+        status: isSelf ? 'joined' : 'ringing',
+        isSelf,
+        stream: isSelf ? stream : null,
+        analyser: null
+      };
+    });
+    
+    // Update Firebase that we joined
+    await fbDb.collection('groupCalls').doc(groupId).update({
+      participants: firebase.firestore.FieldValue.arrayUnion({
+        uid: fbUser.uid,
+        name: fbUserProfile?.displayName||'User',
+        status: 'joined',
+        peerId: window.KP_PEER_ID||localStorage.getItem('kpwa_peer_id')||'',
+        joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+      })
+    }).catch(async ()=>{
+      // If arrayUnion doesn't work with object, do manual merge
+      const doc = await fbDb.collection('groupCalls').doc(groupId).get();
+      if(doc.exists){
+        const existing = doc.data().participants||[];
+        const filtered = existing.filter(p=>p.uid!==fbUser.uid);
+        filtered.push({
+          uid: fbUser.uid,
+          name: fbUserProfile?.displayName||'User',
+          status: 'joined',
+          peerId: window.KP_PEER_ID||localStorage.getItem('kpwa_peer_id')||'',
+          joinedAt: new Date()
+        });
+        await fbDb.collection('groupCalls').doc(groupId).update({participants: filtered});
+      }
+    });
+    
+    // Answer the incoming call if exists
+    if(data.call){
+      try{
+        data.call.answer(stream);
+        bindGroupCall(data.call, data.call.metadata?.uid||'initiator');
+      }catch(e){ console.warn('Answer group call failed', e); }
+    }
+    
+    // Show UI
+    showGroupCallUI();
+    startGroupCallTimer();
+    startGroupCallSpeakingDetection();
+    listenToGroupCallUpdates(groupId);
+    
+    // Also call other participants who are already joined (we need their peerIds)
+    // This will be handled by listenToGroupCallUpdates when we get updated participant list
+    
+    if(typeof toast==='function') toast('Joined group call ✅');
+    
+  }catch(e){
+    console.error('acceptIncomingGroupCall failed', e);
+    if(typeof toast==='function') toast('Could not join: '+(e.message||'mic permission?'));
+    cleanupGroupCall();
+  }
+}
+window.acceptIncomingGroupCall = acceptIncomingGroupCall;
+
+function rejectIncomingGroupCall(){
+  const banner = document.getElementById('incomingGroupCallBanner');
+  if(banner) banner.classList.remove('show');
+  if(typeof stopRingtone==='function') stopRingtone();
+  if(window._incomingGroupCall?.call){
+    try{ window._incomingGroupCall.call.close(); }catch(e){}
+  }
+  window._incomingGroupCall = null;
+  if(typeof toast==='function') toast('Group call declined');
+}
+window.rejectIncomingGroupCall = rejectIncomingGroupCall;
+
+function toggleGroupMute(){
+  if(!groupCallState.localStream) return;
+  const track = groupCallState.localStream.getAudioTracks()[0];
+  if(!track) return;
+  track.enabled = !track.enabled;
+  const btn = document.getElementById('groupMuteBtn');
+  if(btn) btn.classList.toggle('muted', !track.enabled);
+  const selfParticipant = groupCallState.participants.find(p=>p.isSelf);
+  if(selfParticipant) selfParticipant.muted = !track.enabled;
+  renderGroupCallGrid();
+  if(typeof toast==='function') toast(track.enabled?'Mic on':'Mic muted');
+}
+window.toggleGroupMute = toggleGroupMute;
+
+function startGroupCallSpeakingDetection(){
+  if(window._groupSpeakingInterval) clearInterval(window._groupSpeakingInterval);
+  window._groupSpeakingInterval = setInterval(()=>{
+    groupCallState.participants.forEach(p=>{
+      if(p.analyser){
+        const data = new Uint8Array(p.analyser.frequencyBinCount);
+        p.analyser.getByteFrequencyData(data);
+        let sum=0;
+        for(let i=4;i<data.length*0.6;i++) sum+=data[i];
+        const vol = sum/(data.length*0.6);
+        const wasSpeaking = p.speaking;
+        p.speaking = vol>14;
+        if(wasSpeaking!==p.speaking){
+          renderGroupCallGrid();
+        }
+      } else if(p.isSelf && groupCallState.localStream){
+        // Create analyser for self if not exists
+        try{
+          const ctx = window.kpAudioCtx || new (window.AudioContext||window.webkitAudioContext)();
+          window.kpAudioCtx = ctx;
+          if(ctx.state==='suspended') ctx.resume();
+          const source = ctx.createMediaStreamSource(groupCallState.localStream);
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = 256;
+          source.connect(analyser);
+          p.analyser = analyser;
+        }catch(e){}
+      }
+    });
+  }, 120);
+}
+
+function stopGroupCallSpeakingDetection(){
+  if(window._groupSpeakingInterval){
+    clearInterval(window._groupSpeakingInterval);
+    window._groupSpeakingInterval = null;
+  }
+}
+
+async function endGroupCall(shouldDeleteDoc=true){
+  stopGroupCallTimer();
+  stopGroupCallSpeakingDetection();
+  
+  // Stop all peer calls
+  for(const [uid, call] of groupCallState.peerCalls){
+    try{ call.close(); }catch(e){}
+    const audio = document.getElementById('groupAudio_'+uid);
+    if(audio){ audio.srcObject=null; audio.remove(); }
+  }
+  groupCallState.peerCalls.clear();
+  
+  // Stop local stream
+  if(groupCallState.localStream){
+    groupCallState.localStream.getTracks().forEach(t=>t.stop());
+    groupCallState.localStream = null;
+  }
+  
+  // Unsubscribe
+  if(groupCallState.fbUnsub){
+    groupCallState.fbUnsub();
+    groupCallState.fbUnsub = null;
+  }
+  
+  // Delete Firebase doc if initiator
+  if(shouldDeleteDoc && groupCallState.groupId){
+    try{
+      const doc = await fbDb.collection('groupCalls').doc(groupCallState.groupId).get();
+      if(doc.exists && doc.data().initiator===fbUser.uid){
+        await fbDb.collection('groupCalls').doc(groupCallState.groupId).delete();
+      } else {
+        // Just mark self as left
+        const snap = await fbDb.collection('groupCalls').doc(groupCallState.groupId).get();
+        if(snap.exists){
+          const parts = (snap.data().participants||[]).filter(p=>p.uid!==fbUser.uid);
+          await fbDb.collection('groupCalls').doc(groupCallState.groupId).update({participants: parts});
+        }
+      }
+    }catch(e){ console.warn('Failed to clean group call doc', e); }
+  }
+  
+  // Hide UI
+  const overlay = document.getElementById('groupCallOverlay');
+  if(overlay) overlay.classList.remove('show');
+  
+  // Reset state
+  groupCallState.active = false;
+  groupCallState.groupId = null;
+  groupCallState.callId = null;
+  groupCallState.participants = [];
+  groupCallState.startedAt = null;
+  
+  if(typeof toast==='function' && shouldDeleteDoc) toast('Group call ended');
+}
+window.endGroupCall = endGroupCall;
+
+function cleanupGroupCall(){
+  endGroupCall(false);
+}
+
+// Override peer on call to handle both 1-1 and group
+(function(){
+  const origInitPeer = window.initPeer;
+  window.initPeer = function(){
+    if(origInitPeer) origInitPeer();
+    // Wait for peer to be ready
+    const check = setInterval(()=>{
+      if(typeof peer!=='undefined' && peer){
+        clearInterval(check);
+        peer.off('call'); // remove old listeners
+        peer.on('call', (call)=>{
+          const meta = call.metadata||{};
+          if(meta.type==='groupCall'){
+            handleIncomingGroupCall(call);
+          } else {
+            // 1-1 call
+            if(typeof handleIncomingCall==='function') handleIncomingCall(call);
+          }
+        });
+      }
+    }, 500);
+  };
+  
+  // Also listen to Firebase groupCalls for ringing
+  function listenForIncomingGroupCalls(){
+    if(!fbUser || !fbDb) return;
+    try{
+      fbDb.collection('groupCalls').where('memberIds','array-contains', fbUser.uid).onSnapshot(snap=>{
+        snap.docChanges().forEach(change=>{
+          if(change.type==='added' || change.type==='modified'){
+            const data = change.doc.data();
+            if(data.initiator===fbUser.uid) return; // don't show for initiator
+            if(data.status==='ringing' && !groupCallState.active){
+              // Check if we are already in participants and not joined
+              const isParticipant = (data.memberIds||[]).includes(fbUser.uid);
+              if(isParticipant){
+                const alreadyJoined = (data.participants||[]).some(p=>p.uid===fbUser.uid && p.status==='joined');
+                if(!alreadyJoined){
+                  showIncomingGroupCallBanner(data.groupId, data.callId, data.groupName||'Group', data.initiatorName||'Someone', null);
+                }
+              }
+            }
+          } else if(change.type==='removed'){
+            // Call ended
+            const banner = document.getElementById('incomingGroupCallBanner');
+            if(banner) banner.classList.remove('show');
+            if(groupCallState.active && groupCallState.groupId===change.doc.id){
+              if(typeof toast==='function') toast('Group call ended by initiator');
+              endGroupCall(false);
+            }
+          }
+        });
+      });
+    }catch(e){ console.warn('listenForIncomingGroupCalls failed', e); }
+  }
+  
+  // Start listening after auth
+  setTimeout(listenForIncomingGroupCalls, 3000);
+  document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(listenForIncomingGroupCalls, 4000); });
+  
+  // Re-listen on auth state change
+  if(typeof fbAuth!=='undefined' && fbAuth){
+    fbAuth.onAuthStateChanged(user=>{
+      if(user) setTimeout(listenForIncomingGroupCalls, 2000);
+    });
+  }
+})();
+
+// Add group call button to group chat header
+function addGroupCallButtonToHeader(){
+  const headBtns = document.querySelector('.headBtns, .chatHead .headBtns');
+  const chatHead = document.querySelector('.chatHead');
+  if(!chatHead) return;
+  
+  // Check if current is group and button not exists
+  if(current?.group && !document.getElementById('groupCallHeaderBtn')){
+    let btnsContainer = chatHead.querySelector('.headBtns');
+    if(!btnsContainer){
+      btnsContainer = document.createElement('div');
+      btnsContainer.className = 'headBtns';
+      btnsContainer.style.display='flex';
+      btnsContainer.style.gap='8px';
+      chatHead.appendChild(btnsContainer);
+    }
+    
+    const btn = document.createElement('button');
+    btn.id = 'groupCallHeaderBtn';
+    btn.className = 'groupCallBtn';
+    btn.title = 'Group Call';
+    btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 8v6"/><path d="M19 11h6"/><path d="M15 8a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2"/><circle cx="17" cy="7" r="2"/></svg>`;
+    btn.onclick = startGroupCall;
+    btnsContainer.insertBefore(btn, btnsContainer.firstChild);
+  }
+}
+
+// Call when chat opens
+const _origOpenChatForGroupCall = window.openChat;
+window.openChat = async function(id){
+  if(_origOpenChatForGroupCall) await _origOpenChatForGroupCall(id);
+  setTimeout(addGroupCallButtonToHeader, 500);
+};
+
+// Also add to group details page
+const _origOpenGroupDetailsForCall = window.openGroupDetails;
+window.openGroupDetails = async function(){
+  if(_origOpenGroupDetailsForCall) {
+    const result = _origOpenGroupDetailsForCall.apply(this, arguments);
+    if(result instanceof Promise) await result;
+  }
+  setTimeout(()=>{
+    const pageInner = document.getElementById('pageInner');
+    if(pageInner && !document.getElementById('groupCallDetailsBtn')){
+      const hero = pageInner.querySelector('.groupDetailHero, .pageCard');
+      if(hero){
+        const callBtn = document.createElement('button');
+        callBtn.id = 'groupCallDetailsBtn';
+        callBtn.className = 'primary';
+        callBtn.style.marginTop='12px';
+        callBtn.style.width='100%';
+        callBtn.innerHTML = '📞 Start Group Call';
+        callBtn.onclick = ()=>{ closePage(); setTimeout(startGroupCall, 300); };
+        hero.appendChild(callBtn);
+      }
+    }
+  }, 600);
+};
+
+console.log('Group Calling feature loaded - Start group call from group chat header');
+</script>
+
 </body>
 </html><style>
 /* KPAI UI refresh — frontend only. No API key is stored here. */
