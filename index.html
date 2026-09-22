@@ -344,7 +344,7 @@ button,.row,.iconBtn,.nav button,.attachOption,.primary,.secondary,.send{transit
 </nav>
 </aside>
 <main class="chat" id="chatPanel">
-<div class="chatHead" id="chatHead" onclick="if(event.target.closest('.headBtns,.back'))return; current.group?openGroupDetails():openContactInfo(current)"><button class="iconBtn back" onclick="closeChat()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="avatar green" id="headAvatar">A<span class="dot"></span></div><div class="headInfo"><b id="headName">Arjun</b><small id="headStatus">online</small></div><div class="headBtns"><button class="iconBtn" title="Voice call" onclick="startVoiceCall()"><svg viewBox="0 0 24 24"><path d="M6 4.5 9 4l2 4-2 2a13 13 0 0 0 5 5l2-2 4 2-.5 3a2 2 0 0 1-2.2 1.5C9.5 18.2 5.8 14.5 4.5 6.7A2 2 0 0 1 6 4.5Z"/></svg></button><button class="iconBtn" onclick="current.group?openGroupDetails():openModal('chatinfo')"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button></div></div>
+<div class="chatHead" id="chatHead" onclick="if(event.target.closest('.headBtns,.back'))return; current.group?openGroupDetails():openContactInfo(current)"><button class="iconBtn back" onclick="closeChat()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="avatar green" id="headAvatar">A<span class="dot"></span></div><div class="headInfo"><b id="headName">Arjun</b><small id="headStatus">online</small></div><div class="headBtns"><button class="iconBtn" title="Voice call" onclick="startVoiceCall()"><svg viewBox="0 0 24 24"><path d="M6 4.5 9 4l2 4-2 2a13 13 0 0 0 5 5l-2-2 4 2-.5 3a2 2 0 0 1-2.2 1.5C9.5 18.2 5.8 14.5 4.5 6.7A2 2 0 0 1 6 4.5Z"/></svg></button><button class="iconBtn" onclick="current.group?openGroupDetails():openChatActions()"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button></div></div>
 <div class="messages" id="messages"></div>
 <div class="composer"><button class="iconBtn" onclick="openAttachMenu()" title="Attach"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><input id="mediaInput" type="file" accept="image/*,audio/*,.pdf,.zip,.doc,.docx,.xls,.xlsx,.txt" hidden onchange="prepareChatMedia(this.files[0]);this.value=''"><div class="inputWrap"><input id="messageInput" placeholder="Message" onkeydown="if(event.key==='Enter')sendMessage()"><button class="emojiBtn" onclick="openEmojiPicker()" title="Emoji"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 14.5a4.2 4.2 0 0 0 7 0M9 9h.1M15 9h.1"/></svg></button></div><button class="send" onclick="sendMessage()"><svg viewBox="0 0 24 24"><path d="m4 5 16 7-16 7 3-7zM7 12h13"/></svg></button></div>
 </main>
@@ -5431,6 +5431,250 @@ setTimeout(replaceAINavWithGMap, 1000);
 setTimeout(replaceAINavWithGMap, 3000);
 
 console.log('Perfect match fixes loaded - DP round, message bubbles, call logs, add people, G Map');
+</script>
+
+
+<script>
+/* =========================================================
+   MODERATION + DYNAMIC YOUTUBE CHANNELS
+   ========================================================= */
+async function openChatActions(){
+  if(!current||current.group||!current.otherUid)return;
+  const u=await fbDb.collection('users').doc(current.otherUid).get().catch(()=>null);
+  const x=u?.exists?u.data()||{}:{};
+  const blocked=!!x.blocked;
+  const name=x.displayName||x.username||current.name||'User';
+  const sheet=document.getElementById('modalSheet');
+  if(!sheet)return;
+  sheet.innerHTML=`<div class="handle"></div><h3>${escapeHtml(name)}</h3>
+    <div class="gifHint">Moderation</div>
+    <button class="secondary" onclick="openReportUser('${String(current.otherUid).replace(/'/g,"\\'")}')">Report user</button>
+    <button class="secondary" onclick="toggleUserBlock('${String(current.otherUid).replace(/'/g,"\\'")}',${blocked?'false':'true'})">${blocked?'Unblock user':'Block user'}</button>
+    <button class="secondary" onclick="openContactInfo(current);closeModal()">View profile</button>
+    <button class="secondary" onclick="closeModal()">Cancel</button>`;
+  document.getElementById('modalBack')?.classList.add('show');
+}
+async function toggleUserBlock(targetUid,on){
+  if(!fbUser||!targetUid||targetUid===fbUser.uid)return;
+  const id=fbUser.uid+'_'+targetUid;
+  try{
+    const ref=fbDb.collection('userBlocks').doc(id);
+    if(on) await ref.set({blockerUid:fbUser.uid,targetUid,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    else await ref.delete();
+    toast(on?'User blocked':'User unblocked');closeModal();
+  }catch(e){console.error(e);toast('Could not update block');}
+}
+async function openReportUser(targetUid){
+  if(!fbUser||!targetUid)return;
+  const sheet=document.getElementById('modalSheet');if(!sheet)return;
+  sheet.innerHTML=`<div class="handle"></div><h3>Report user</h3>
+    <select id="reportReason" class="field"><option>Spam</option><option>Harassment</option><option>Impersonation</option><option>Inappropriate content</option><option>Other</option></select>
+    <textarea id="reportDescription" class="field" style="height:110px;padding:12px;resize:vertical" maxlength="500" placeholder="Tell the admin what happened…"></textarea>
+    <button class="primary" onclick="submitUserReport('${String(targetUid).replace(/'/g,"\\'")}')">Submit report</button>
+    <button class="secondary" onclick="openChatActions()">Back</button>`;
+}
+async function submitUserReport(targetUid){
+  const reason=document.getElementById('reportReason')?.value||'Other';
+  const description=(document.getElementById('reportDescription')?.value||'').trim();
+  try{
+    await fbDb.collection('reports').add({reporterUid:fbUser.uid,targetUid,reason,description,status:'pending',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    toast('Report submitted');closeModal();
+  }catch(e){console.error(e);toast('Could not submit report');}
+}
+window.openChatActions=openChatActions;window.toggleUserBlock=toggleUserBlock;window.openReportUser=openReportUser;window.submitUserReport=submitUserReport;
+
+async function loadDynamicYoutubeChannels(){
+  try{
+    const snap=await fbDb.collection('youtubeChannels').orderBy('createdAt','desc').limit(100).get();
+    return snap.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){return [];}
+}
+async function openKPSettings(){
+  const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');if(!pv||!pi)return;
+  pv.classList.add('show');pi.style.padding='';
+  const channels=await loadDynamicYoutubeChannels();
+  const channelHtml=channels.map(c=>`<div class="kpChannelCard" style="margin-top:10px">
+    <img class="kpChannelLogo" src="${escapeHtml(c.logoURL||'')}" alt="${escapeHtml(c.name||'YouTube')}">
+    <div><div class="kpChannelName">${escapeHtml(c.name||'YouTube')}${c.verified?'<svg class="kpVerified" viewBox="0 0 24 24"><path fill="#4cc9ff" d="M12 2.8 14.3 4l2.6-.1 1.2 2.3 2.2 1.2-.1 2.6 1.2 2.3-1.2 2.3.1 2.6-2.2 1.2-1.2 2.3-2.6-.1L12 21.2 9.7 20l-2.6.1-1.2-2.3-2.2-1.2.1-2.6-1.2-2.3 1.2-2.3-.1-2.6 2.2-1.2 1.2-2.3 2.6.1Z"/><path fill="#fff" d="m7.7 12.3 2.8 2.8 5.8-6-.9-.9-4.9 4.9-1.9-1.9Z"/></svg>':''}</div><div class="kpChannelMeta">${escapeHtml(c.handle||'')} · YouTube</div></div>
+    <button class="kpChannelOpen" onclick="window.open('${escapeHtml(c.url||'#')}','_blank','noopener')">Open</button></div>`).join('')||'<div style="color:#777;margin-top:10px">No channels added yet.</div>';
+  pi.innerHTML=`<div class="pageHeader"><button class="pageBack" onclick="closePage()"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div><h2>Settings</h2><div style="color:#777;font-size:12px">Tools & integrations</div></div></div>
+  <div class="pageCard"><b>Tools</b><div class="kpToolRow"><div class="kpToolIcon">GIF</div><div class="grow"><b>GIPHY</b><small>Search and add GIFs.</small></div><button class="kpExternal" onclick="window.open('https://giphy.com','_blank','noopener')">↗</button></div><div class="kpToolRow"><div class="kpToolIcon">AI</div><div class="grow"><b>KPAI</b><small>Open the in-app AI assistant.</small></div><button class="kpExternal" onclick="openKPAI()">↗</button></div></div>
+  <div class="pageCard"><b>Channels</b>${channelHtml}</div>`;
+}
+window.openKPSettings=openKPSettings;
+</script>
+
+
+<!-- FINAL REQUEST PATCH: remove AI UI, remove map pins/AI, enable true map pan+zoom, polish voice messages and calls -->
+<style id="kp-final-request-patch">
+/* AI is completely removed from the visible product UI. */
+.kpaiNav,.kpaiChatRow,.kpaiPage,.kpaiShell,.kpaiHead,.kpaiBody,.kpaiInput,.kpaiWelcome,.kpaiSuggestions,.kpaiSettingsPanel,.kpaiMiniOrb,.kpaiListAvatar,.kpaiIcon,.kpaiDot,.kpaiUnavailableBanner,[data-ai],.kpMapAi{display:none!important}
+/* Map is a clean pannable image surface. */
+.kpMapCanvas{touch-action:none;cursor:grab;overscroll-behavior:contain}
+.kpMapCanvas.is-dragging{cursor:grabbing}
+.kpMapImage{width:100%;height:100%;object-fit:cover;transform-origin:center center;will-change:transform;transition:none!important;user-select:none;-webkit-user-drag:none;pointer-events:none}
+.kpMapShade{pointer-events:none!important}
+.kpMapMarker{display:none!important}
+.kpMapInfo{display:none!important}
+.kpMapAttribution{opacity:.75}
+/* WhatsApp-like voice bubble */
+.kpVoicePlayer{display:flex;align-items:center;gap:9px;min-width:220px;max-width:310px;padding:2px 0}
+.kpVoicePlay{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--kp-green,#b8ff22);color:#071000;flex:none}
+.kpVoicePlay svg{width:18px;height:18px;fill:currentColor}
+.kpVoiceMain{min-width:0;flex:1}
+.kpVoiceWave{height:27px;display:flex;align-items:center;gap:2px;overflow:hidden}
+.kpVoiceWave i{width:3px;height:7px;border-radius:4px;background:#777;opacity:.9;transition:height .12s ease,background .12s ease}
+.kpVoicePlayer.playing .kpVoiceWave i{background:var(--kp-green,#b8ff22)}
+.kpVoicePlayer.me .kpVoiceWave i{background:#9edc35}
+.kpVoiceBottom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;color:#777;font-size:9px}
+.kpVoiceSave{background:transparent;color:#999;padding:2px 4px;font-size:10px}
+.kpVoiceSave:hover{color:#fff}
+.kpVoiceProgress{height:3px;border-radius:4px;background:#2a2a2a;overflow:hidden;margin-top:2px}
+.kpVoiceProgress span{display:block;width:0;height:100%;background:var(--kp-green,#b8ff22)}
+.msg.me .kpVoiceBottom{color:#8e9d7b}
+.msg.me .kpVoiceProgress{background:#2c3822}
+/* Call screen */
+.callAvatar{overflow:hidden!important}
+.callAvatar img{width:100%!important;height:100%!important;object-fit:cover!important;border-radius:50%!important}
+.callCard .callTitle{margin-top:2px}
+.callCard .callSub{margin-top:7px}
+</style>
+<script>
+(function(){
+  'use strict';
+
+  /* ---------- Remove AI completely ---------- */
+  window.openKPAI=function(){ return false; };
+  window.kpaiPrompt=function(){ return false; };
+  window.sendKPAI=function(){ return false; };
+  window.installAI=function(){ return false; };
+  function removeAI(){
+    document.querySelectorAll('.kpaiNav,.kpaiChatRow,.kpaiPage,.kpaiShell,.kpaiSettingsPanel,.kpaiUnavailableBanner').forEach(e=>e.remove());
+    document.querySelectorAll('.kpaiNav,.kpaiChatRow,.kpaiMiniOrb,.kpaiListAvatar').forEach(e=>e.remove());
+    document.querySelectorAll('.kpMapAi').forEach(e=>e.remove());
+    document.querySelectorAll('.pageList').forEach(e=>{
+      const t=(e.textContent||'').toLowerCase();
+      if(t.includes('kpai') || t.includes('ai assistant')) e.remove();
+    });
+  }
+  new MutationObserver(removeAI).observe(document.documentElement,{childList:true,subtree:true});
+  removeAI();
+
+  /* ---------- Pannable / zoomable user-supplied map ---------- */
+  const MAP_SRC = (typeof MAP!=='undefined') ? MAP : '';
+  let mapState={x:0,y:0,z:1};
+  function clampMap(){
+    const c=document.querySelector('.kpMapCanvas'),im=document.getElementById('kpMapImage');
+    if(!c||!im)return;
+    const cw=c.clientWidth,ch=c.clientHeight;
+    const r=Math.max(cw/Math.max(1,im.naturalWidth||1240),ch/Math.max(1,im.naturalHeight||1240));
+    const iw=(im.naturalWidth||1240)*r*mapState.z, ih=(im.naturalHeight||1240)*r*mapState.z;
+    const maxX=Math.max(0,(iw-cw)/2),maxY=Math.max(0,(ih-ch)/2);
+    mapState.x=Math.max(-maxX,Math.min(maxX,mapState.x));
+    mapState.y=Math.max(-maxY,Math.min(maxY,mapState.y));
+  }
+  function paintMap(){
+    const im=document.getElementById('kpMapImage');if(!im)return;
+    clampMap();im.style.transform=`translate3d(${mapState.x}px,${mapState.y}px,0) scale(${mapState.z})`;
+  }
+  window.kpMapZoom=function(dir){
+    const old=mapState.z;
+    mapState.z=Math.max(1,Math.min(4,old+(Number(dir)||0)*.25));
+    if(mapState.z===1){mapState.x=0;mapState.y=0;}
+    paintMap();
+  };
+  window.kpMapSearch=function(q){ if(q) toast('Map search: '+q); };
+  window.openKPMap=function(){
+    const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');if(!pv||!pi)return;
+    pv.classList.add('show');pi.style.padding='0';pi.style.maxWidth='none';
+    mapState={x:0,y:0,z:1};
+    pi.innerHTML=`<div class="kpMapPage">
+      <div class="kpMapTop">
+        <button class="kpMapBack" onclick="closeKPMap()" aria-label="Back"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button>
+        <div class="kpMapSearch"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input id="kpMapSearchInput" placeholder="Search this map" onkeydown="if(event.key==='Enter')kpMapSearch(this.value)"></div>
+        <button class="kpMapAction" onclick="mapState={x:0,y:0,z:1};paintMap()" aria-label="Reset map">◎</button>
+      </div>
+      <div class="kpMapCanvas" id="kpMapCanvas"><img class="kpMapImage" id="kpMapImage" src="${MAP_SRC}" alt="Map" draggable="false"><div class="kpMapShade"></div>
+        <div class="kpMapControls"><button onclick="kpMapZoom(1)" aria-label="Zoom in">+</button><button onclick="kpMapZoom(-1)" aria-label="Zoom out">−</button></div>
+        <div class="kpMapAttribution">Map</div>
+      </div>
+    </div>`;
+    const canvas=document.getElementById('kpMapCanvas'),im=document.getElementById('kpMapImage');
+    let drag=null;
+    const start=e=>{drag={x:e.clientX,y:e.clientY,sx:mapState.x,sy:mapState.y};canvas.classList.add('is-dragging');canvas.setPointerCapture?.(e.pointerId);};
+    const move=e=>{if(!drag)return;mapState.x=drag.sx+(e.clientX-drag.x);mapState.y=drag.sy+(e.clientY-drag.y);paintMap();};
+    const end=e=>{drag=null;canvas.classList.remove('is-dragging');try{canvas.releasePointerCapture?.(e.pointerId)}catch(_){} };
+    canvas.addEventListener('pointerdown',start);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);canvas.addEventListener('pointerleave',e=>{if(drag)move(e)});
+    canvas.addEventListener('wheel',e=>{e.preventDefault();const before=mapState.z;mapState.z=Math.max(1,Math.min(4,before+(e.deltaY<0?.18:-.18)));if(mapState.z===1){mapState.x=0;mapState.y=0;}paintMap();},{passive:false});
+    im.addEventListener('load',paintMap,{once:true});setTimeout(paintMap,60);
+  };
+  window.closeKPMap=function(){const pv=document.getElementById('pageView'),pi=document.getElementById('pageInner');pv.classList.remove('show');pi.style.padding='';pi.style.maxWidth='';};
+
+  /* ---------- Voice message player ---------- */
+  function fmt(s){if(!isFinite(s))return '0:00';s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+  function decorateVoiceMessages(){
+    document.querySelectorAll('.msgMediaWrap audio').forEach(audio=>{
+      if(audio.closest('.kpVoicePlayer'))return;
+      const src=audio.getAttribute('src');if(!src)return;
+      const msg=audio.closest('.msg');
+      const wrap=document.createElement('div');wrap.className='kpVoicePlayer'+(msg?.classList.contains('me')?' me':'');
+      const play=document.createElement('button');play.className='kpVoicePlay';play.setAttribute('aria-label','Play voice message');
+      play.innerHTML='<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+      const main=document.createElement('div');main.className='kpVoiceMain';
+      const wave=document.createElement('div');wave.className='kpVoiceWave';
+      for(let i=0;i<28;i++){const b=document.createElement('i');b.style.height=(6+Math.round(Math.abs(Math.sin(i*1.7))*15))+'px';wave.appendChild(b);}
+      const progress=document.createElement('div');progress.className='kpVoiceProgress';const fill=document.createElement('span');progress.appendChild(fill);
+      const bottom=document.createElement('div');bottom.className='kpVoiceBottom';const duration=document.createElement('span');duration.textContent='0:00';
+      const save=document.createElement('button');save.className='kpVoiceSave';save.textContent='Save';save.type='button';
+      bottom.append(duration,save);main.append(wave,progress,bottom);wrap.append(play,main);audio.replaceWith(wrap);wrap.append(audio);audio.style.display='none';audio.controls=false;
+      play.onclick=()=>{if(audio.paused)audio.play().catch(()=>toast('Could not play voice message'));else audio.pause();};
+      audio.addEventListener('loadedmetadata',()=>duration.textContent=fmt(audio.duration));
+      audio.addEventListener('timeupdate',()=>{duration.textContent=fmt(audio.currentTime)+(isFinite(audio.duration)?' / '+fmt(audio.duration):'');fill.style.width=(audio.duration?((audio.currentTime/audio.duration)*100):0)+'%';});
+      audio.addEventListener('play',()=>{wrap.classList.add('playing');play.innerHTML='<svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>';});
+      audio.addEventListener('pause',()=>{wrap.classList.remove('playing');play.innerHTML='<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';});
+      audio.addEventListener('ended',()=>{fill.style.width='0%';});
+      save.onclick=()=>{const a=document.createElement('a');a.href=src;a.download='KP-WhatsApp-voice.webm';a.target='_blank';document.body.appendChild(a);a.click();a.remove();};
+    });
+  }
+  const originalRenderMessages=window.renderMessages;
+  if(originalRenderMessages){
+    window.renderMessages=function(){originalRenderMessages.apply(this,arguments);setTimeout(decorateVoiceMessages,0);};
+  }
+  window.decorateVoiceMessages=decorateVoiceMessages;
+  setInterval(decorateVoiceMessages,1200);
+
+  /* ---------- Correct call identity: photo + name + username ---------- */
+  const originalShowCallModal=window.showCallModal;
+  window.showCallModal=function(type,name,initial,photo){
+    const p=photo || (window.current?.photoURL) || (window.fbUserProfile?.photoURL) || '';
+    if(originalShowCallModal) originalShowCallModal(type,name,initial,p);
+    const av=document.getElementById('callAvatar');
+    if(av) av.innerHTML=p?`<img src="${escapeHtml(p)}" alt="">`:escapeHtml(initial||'A');
+    const peer=document.getElementById('callPeer');if(peer)peer.textContent=window.current?.username?'@'+window.current.username:'';
+    const title=document.getElementById('callTitle');if(title)title.textContent=name||window.current?.name||'Voice call';
+  };
+  const originalStartVoiceCall=window.startVoiceCall;
+  window.startVoiceCall=function(){
+    if(window.current&&!window.current.group){
+      const name=window.current.name||window.current.username||'Voice call';
+      window.showCallModal('outgoing',name,window.current.initial||name[0]?.toUpperCase()||'A',window.current.photoURL||'');
+    }
+    return originalStartVoiceCall?originalStartVoiceCall.apply(this,arguments):undefined;
+  };
+  const originalHandleIncoming=window.handleIncomingCall;
+  window.handleIncomingCall=function(call){
+    if(!call)return;
+    const meta=call.metadata||{};window.incomingCall=call;
+    const name=meta.name||meta.username||'Incoming caller';
+    window.showCallModal('incoming',name,(name[0]||'U').toUpperCase(),meta.photoURL||'');
+    try{window.playRingtone?.()}catch(_){}
+    /* Preserve the original incoming-call behavior when available, but avoid double UI. */
+    if(originalHandleIncoming && !window.activeCall){ try{ originalHandleIncoming(call); }catch(_){} }
+  };
+
+  /* Make the composer rebind after chat navigation and decorate any existing audio immediately. */
+  setTimeout(()=>{try{window.bindVoice?.()}catch(_){} decorateVoiceMessages();removeAI();},300);
+})();
 </script>
 
 </body>
