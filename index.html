@@ -4,7 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#070707">
-<title>KP WhatsApp</title>
+<meta name="application-name" content="KPRP" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>KPRP — Next-Gen Main App</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script><script>
 /* ================= FINAL PRODUCTION PATCH ================= */
 let selectedMessageIds=new Set();
@@ -305,6 +309,32 @@ button,.row,.iconBtn,.nav button,.attachOption,.primary,.secondary,.send{transit
 .kpaiUnavailableBanner .icon{width:20px;height:20px;background:#ef4444;border-radius:50%;display:grid;place-items:center;color:white;font-weight:800;font-size:12px;flex-shrink:0}
 </style>
 
+<style id="kprp-nextgen-css">
+/* ================= KPRP NEXT-GEN VISUAL LAYER ================= */
+:root{
+  --kp-bg:#070908;--kp-panel:#0d100f;--kp-panel2:#111512;--kp-border:rgba(255,255,255,.075);
+  --kp-text:#f5f7f4;--kp-muted:#8d968e;--kp-lime:#b8ff22;--kp-lime2:#8ee600;
+  --kp-shadow:0 24px 80px rgba(0,0,0,.42);--kp-radius:22px;
+}
+html,body{background:radial-gradient(1000px 700px at 15% -10%,rgba(184,255,34,.07),transparent 55%),var(--kp-bg)!important}
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;color:var(--kp-text)!important}
+*{scrollbar-width:thin;scrollbar-color:#313831 transparent}
+.authGate{background:radial-gradient(700px 500px at 50% 10%,rgba(184,255,34,.11),transparent 60%),linear-gradient(180deg,#060806,#090b09)!important;backdrop-filter:blur(16px)}
+.authCard{width:min(94vw,430px)!important;border:1px solid var(--kp-border)!important;background:linear-gradient(145deg,rgba(20,24,20,.96),rgba(8,10,9,.96))!important;border-radius:30px!important;box-shadow:var(--kp-shadow)!important;padding:30px!important}
+.authBrand{margin-bottom:22px!important}.authLogo{width:62px!important;height:62px!important;border-radius:20px!important;background:linear-gradient(145deg,#c9ff55,#8ee600)!important;color:#081000!important;box-shadow:0 12px 34px rgba(184,255,34,.18)!important}.authTitle{font-size:29px!important;letter-spacing:-.7px!important;font-weight:850!important}.authSub{line-height:1.55!important;color:#8e978f!important}
+.field{height:50px!important;border-radius:15px!important;border:1px solid #252c25!important;background:#0c0f0d!important;color:#fff!important;transition:.2s ease!important}.field:focus{border-color:#b8ff2266!important;box-shadow:0 0 0 4px #b8ff2210!important}
+.primary{height:50px!important;border-radius:15px!important;background:linear-gradient(135deg,#c7ff4b,#99ec00)!important;color:#081000!important;font-weight:850!important;box-shadow:0 10px 28px #b8ff2220!important}.createAccountBtn{height:50px!important;border-radius:15px!important;border:1px solid #2b342a!important;background:#151a15!important;color:#e9eee9!important}
+.app{background:linear-gradient(135deg,#070907,#0a0d0a)!important}.sidebar{background:rgba(10,13,11,.9)!important;border-right:1px solid var(--kp-border)!important;backdrop-filter:blur(24px)!important}.top{height:78px!important;border-bottom:1px solid var(--kp-border)!important}.brand{font-weight:850!important;letter-spacing:-.25px}.brandMark{width:39px!important;height:39px!important;border-radius:13px!important;background:linear-gradient(145deg,#c7ff4b,#8fe700)!important;color:#081000!important;box-shadow:0 8px 24px #b8ff2217!important}.iconBtn{border-radius:13px!important;background:rgba(255,255,255,.035)!important;border:1px solid rgba(255,255,255,.06)!important;transition:transform .18s ease,background .18s ease,border-color .18s ease!important}.iconBtn:hover{background:rgba(184,255,34,.08)!important;border-color:#b8ff2233!important;transform:translateY(-1px)}
+.search{margin:13px 14px 10px!important;background:#111511!important;border:1px solid var(--kp-border)!important;border-radius:16px!important;height:46px!important}.search input{color:#fff!important}.tabs{padding:0 14px 9px!important}.tab{border-radius:999px!important;color:#7f887f!important}.tab.active{background:#b8ff2213!important;color:#dfffad!important;border:1px solid #b8ff2225!important}.chatRow{margin:3px 9px!important;border-radius:17px!important;border:1px solid transparent!important;transition:.18s ease!important}.chatRow:hover{background:#121712!important}.chatRow.selected{background:linear-gradient(135deg,#151b14,#101410)!important;border-color:#b8ff2218!important;box-shadow:inset 3px 0 0 #b8ff22!important}.avatar{box-shadow:inset 0 0 0 1px #ffffff12!important}.nav{background:rgba(9,12,10,.96)!important;border-top:1px solid var(--kp-border)!important}.nav button{border-radius:14px!important}.nav button.active{color:var(--kp-lime)!important;background:#b8ff220c!important}.newChatFab{width:54px!important;height:54px!important;border-radius:18px!important;background:linear-gradient(145deg,#c7ff4b,#94e900)!important;color:#071000!important;box-shadow:0 14px 35px #b8ff2220!important}
+.chat{background:radial-gradient(900px 600px at 85% 0%,rgba(184,255,34,.035),transparent 50%),#080a08!important}.chatHead{height:78px!important;background:rgba(9,12,10,.82)!important;border-bottom:1px solid var(--kp-border)!important;backdrop-filter:blur(20px)!important}.headInfo b{font-size:15px!important}.headInfo small{color:#8e988f!important}.messages{background-image:radial-gradient(circle at 30% 20%,rgba(184,255,34,.022),transparent 25%),radial-gradient(circle at 80% 70%,rgba(76,201,255,.018),transparent 25%)!important}.composer{margin:10px!important;padding:8px!important;border:1px solid var(--kp-border)!important;border-radius:20px!important;background:rgba(17,21,17,.9)!important;box-shadow:0 14px 45px #0005!important;backdrop-filter:blur(18px)!important}.composer .inputWrap{background:#0c100d!important;border:1px solid #252b25!important;border-radius:15px!important}.composer input{color:#fff!important}.send{border-radius:15px!important;background:linear-gradient(135deg,#c7ff4b,#91e800)!important;color:#071000!important}
+.msg{box-shadow:0 8px 25px #0002!important}.msg.me{background:linear-gradient(145deg,#b8ff22,#93e800)!important;color:#071000!important}.msg.in{background:#151a16!important;border:1px solid #ffffff08!important}
+.pageView{background:rgba(3,5,4,.88)!important;backdrop-filter:blur(22px)!important}.pageInner{background:#0a0d0a!important}.pageCard{border:1px solid var(--kp-border)!important;background:linear-gradient(145deg,#111511,#0b0e0b)!important;border-radius:20px!important;box-shadow:0 15px 50px #0003!important}.pageHeader{border-bottom-color:var(--kp-border)!important}.modalBack{background:rgba(0,0,0,.68)!important;backdrop-filter:blur(10px)!important}.sheet{border:1px solid var(--kp-border)!important;background:linear-gradient(145deg,#151a15,#0b0e0b)!important;border-radius:26px 26px 0 0!important;box-shadow:0 -20px 70px #0008!important}
+.callOverlay{background:rgba(3,5,4,.88)!important;backdrop-filter:blur(24px)!important}.callCard{border:1px solid var(--kp-border)!important;background:linear-gradient(145deg,#151a15,#090c09)!important;border-radius:30px!important;box-shadow:var(--kp-shadow)!important}
+/* The old map option is intentionally hidden from the main app navigation. */.kpNavMap{display:none!important}
+@media(max-width:760px){.sidebar{width:100%!important;border-right:0!important}.chat{position:fixed!important;inset:0!important;transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1)!important;z-index:20}.app.chat-open .chat{transform:translateX(0)!important}.top{padding-top:max(8px,env(safe-area-inset-top))!important;height:calc(70px + env(safe-area-inset-top))!important}.composer{margin-bottom:max(10px,env(safe-area-inset-bottom))!important}.nav{padding-bottom:max(6px,env(safe-area-inset-bottom))!important}.authCard{padding:24px!important}}
+@media(min-width:761px){.chat{border-radius:24px 0 0 24px!important;overflow:hidden!important;margin:8px 8px 8px 0!important;border:1px solid var(--kp-border)!important;box-shadow:var(--kp-shadow)!important}.sidebar{margin:8px 0 8px 8px!important;border-radius:24px!important;overflow:hidden!important;border:1px solid var(--kp-border)!important}.app{gap:0!important}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+</style>
 </head>
 <body>
 <div class="authGate" id="authGate">
@@ -6129,3 +6159,24 @@ function boot(){installNav();installAI();bindVoice();allPresence();setTimeout(al
  }
 })();
 </script>
+
+<script id="kprp-nextgen-runtime">
+(function(){
+  try{
+    document.documentElement.style.setProperty('--app-height',window.innerHeight+'px');
+    window.addEventListener('resize',()=>document.documentElement.style.setProperty('--app-height',window.innerHeight+'px'),{passive:true});
+    // Keep the visual layer from creating duplicate listeners or duplicate Firebase initialization.
+    if(window.__KPRP_NEXTGEN_RUNTIME__) return; window.__KPRP_NEXTGEN_RUNTIME__=true;
+    document.addEventListener('click',function(e){
+      const b=e.target.closest('button'); if(!b)return;
+      if(b.disabled)return;
+      b.classList.remove('kp-press'); void b.offsetWidth; b.classList.add('kp-press');
+    },{passive:true});
+    const style=document.createElement('style');style.textContent='.kp-press{animation:kpPress .22s ease-out}@keyframes kpPress{50%{transform:scale(.96)}}';document.head.appendChild(style);
+    // Prevent accidental stale map entry points while retaining old code compatibility.
+    document.querySelectorAll('.kpNavMap').forEach(x=>x.remove());
+  }catch(e){console.warn('KPRP visual runtime',e)}
+})();
+</script>
+
+
