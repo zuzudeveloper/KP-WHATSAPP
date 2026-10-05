@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KP WhatsApp — Chat, Call & Connect</title>
+
+  <link rel="icon" href="/favicon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)" />
+  <link rel="icon" href="/favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="KP WhatsApp — Chat, Call & Connect" />
+  <meta property="og:description" content="Chat, call and connect with KP WhatsApp." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family:
+        "Inter",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+      background: #ffffff;
+    }
+
+    .iframe-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="iframe-container">
+    <iframe
+      id="preview-iframe"
+      src="https://01a0fa82-92f0-7de8-bc56-c11637278957.arena.site/?embed=true"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-presentation allow-popups allow-popups-to-escape-sandbox allow-downloads allow-top-navigation-by-user-activation"
+      allow="
+        accelerometer;
+        autoplay;
+        camera;
+        encrypted-media;
+        fullscreen;
+        geolocation;
+        gyroscope;
+        microphone;
+        midi;
+        clipboard-read;
+        clipboard-write;
+        usb;
+        vr;
+        xr-spatial-tracking;
+        screen-wake-lock;
+        magnetometer;
+        ambient-light-sensor;
+        battery;
+        gamepad;
+        picture-in-picture;
+        display-capture;
+        bluetooth;
+      "
+      referrerpolicy="origin-when-cross-origin"
+    ></iframe>
+  </div>
+
+  <script>
+    const iframe = document.getElementById("preview-iframe");
+
+    iframe.addEventListener("load", () => {
+      iframe.focus();
+    });
+  </script>
+
+</body>
+</html>
